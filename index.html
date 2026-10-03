@@ -211,7 +211,6 @@ input[type="range"] {
 
 </div>
 
-
 <div id="app">
 
     <div id="sidebar">
@@ -235,7 +234,6 @@ input[type="range"] {
 
         </div>
 
-
         <div class="control">
 
             <div class="control-label">
@@ -252,7 +250,6 @@ input[type="range"] {
             >
 
         </div>
-
 
         <div class="control">
 
@@ -271,49 +268,46 @@ input[type="range"] {
 
         </div>
 
-
         <div class="help">
 
             <strong>How to use</strong>
 
             <br><br>
 
-            Click empty space to create a price box.
+            Click empty space to create a
+            <strong>100</strong> price box.
 
             <br><br>
 
-            Every new box starts at
-            <strong>100</strong>.
+            <strong>Click a box</strong> to select it.
 
             <br><br>
 
-            <strong>Type directly</strong> when a box
-            is selected to change its number.
+            <strong>Click the selected box again</strong>
+            to edit the number.
 
             <br><br>
 
-            Press <strong>Enter</strong> when finished
-            typing.
+            Simply type the new number.
 
             <br><br>
 
-            <strong>Drag empty space</strong> around
-            several boxes to select them together.
+            Press <strong>Enter</strong> to finish.
+
+            <br><br>
+
+            <strong>Shift + click</strong> to select
+            multiple boxes.
 
             <br><br>
 
             Drag a selected box to move all
-            selected boxes together.
+            selected boxes.
 
             <br><br>
 
-            <strong>Shift + click</strong> boxes to
-            add/remove them from the selection.
-
-            <br><br>
-
-            Drag the blue corner to resize
-            selected boxes together.
+            Drag the blue corner of the group
+            to resize all selected boxes.
 
             <br><br>
 
@@ -321,15 +315,9 @@ input[type="range"] {
             <strong>Backspace</strong> to delete
             selected boxes.
 
-            <br><br>
-
-            Double-click a box if you want to
-            select it and immediately edit its number.
-
         </div>
 
     </div>
-
 
     <div id="workspace">
 
@@ -366,11 +354,10 @@ input[type="range"] {
 
 </div>
 
-
 <script>
 
 /* =========================================================
-   SETUP
+   VARIABLES
 ========================================================= */
 
 const canvas =
@@ -394,77 +381,36 @@ const selectionBox =
 
 let image = null;
 
-
-/*
-    Every price box has:
-
-    x
-    y
-    width
-    height
-    price
-*/
-
 let boxes = [];
-
-
-/*
-    Multiple boxes can now be selected.
-*/
 
 let selectedBoxes = [];
 
+let editingBox = null;
+
+let typingValue = "";
 
 let brightness = 100;
 let contrast = 100;
 let saturation = 100;
 
-
 let zoom = 1;
-
-
-/* Mouse states */
 
 let dragging = false;
 let resizing = false;
 let selecting = false;
 
-
-/* Group movement */
-
 let dragStartX = 0;
 let dragStartY = 0;
 
-
-/*
-    Store original positions when
-    moving multiple boxes.
-*/
-
 let dragOriginalPositions = [];
 
-
-/* Group resize */
+let selectionStartX = 0;
+let selectionStartY = 0;
 
 let resizeStartX = 0;
 let resizeStartY = 0;
 
 let resizeGroup = null;
-
-
-/* Selection rectangle */
-
-let selectionStartX = 0;
-let selectionStartY = 0;
-
-
-/* Direct typing */
-
-let editingBox = null;
-let typingValue = "";
-
-
-/* History */
 
 let history = [];
 let historyIndex = -1;
@@ -521,7 +467,6 @@ function loadImage(file) {
 
             image = img;
 
-
             canvas.width =
                 img.naturalWidth;
 
@@ -532,6 +477,10 @@ function loadImage(file) {
             boxes = [];
 
             selectedBoxes = [];
+
+            editingBox = null;
+
+            typingValue = "";
 
 
             brightness = 100;
@@ -560,6 +509,7 @@ function loadImage(file) {
 
 
             history = [];
+
             historyIndex = -1;
 
 
@@ -619,8 +569,7 @@ function draw() {
     );
 
 
-    ctx.filter =
-        "none";
+    ctx.filter = "none";
 
 
     boxes.forEach(
@@ -630,18 +579,29 @@ function draw() {
 
         }
     );
+
+
+    /*
+        Draw ONE resize handle for
+        the entire selected group.
+    */
+
+    if (
+        selectedBoxes.length > 0 &&
+        editingBox === null
+    ) {
+
+        drawGroupHandle();
+
+    }
 }
 
 
 /* =========================================================
-   DRAW PRICE BOX
+   DRAW BOX
 ========================================================= */
 
 function drawBox(box) {
-
-    /*
-        White background
-    */
 
     ctx.fillStyle =
         "#ffffff";
@@ -655,10 +615,6 @@ function drawBox(box) {
     );
 
 
-    /*
-        Selection border
-    */
-
     if (
         selectedBoxes.includes(box)
     ) {
@@ -666,14 +622,17 @@ function drawBox(box) {
         ctx.strokeStyle =
             "#1677ff";
 
-        ctx.lineWidth = 5;
+        ctx.lineWidth =
+            5;
 
     } else {
 
         ctx.strokeStyle =
             "#222";
 
-        ctx.lineWidth = 2;
+        ctx.lineWidth =
+            2;
+
     }
 
 
@@ -688,7 +647,8 @@ function drawBox(box) {
     /*
         FONT SIZE
 
-        Bigger box = bigger number.
+        The number gets larger
+        automatically as the box grows.
     */
 
     const fontSize =
@@ -716,14 +676,13 @@ function drawBox(box) {
         "middle";
 
 
-    /*
-        If this box is being typed into,
-        show what the user is typing.
-    */
-
     let displayedPrice =
         box.price;
 
+
+    /*
+        Show current typed number.
+    */
 
     if (
         editingBox === box
@@ -742,43 +701,65 @@ function drawBox(box) {
         box.y +
             box.height / 2
     );
+}
+
+
+/* =========================================================
+   GROUP HANDLE
+========================================================= */
+
+function drawGroupHandle() {
+
+    const bounds =
+        getSelectionBounds();
+
+
+    if (!bounds) return;
+
+
+    const size = 22;
+
+
+    ctx.fillStyle =
+        "#1677ff";
+
+
+    ctx.fillRect(
+
+        bounds.right -
+            size / 2,
+
+        bounds.bottom -
+            size / 2,
+
+        size,
+
+        size
+    );
 
 
     /*
-        Resize handle.
-
-        Show on every selected box,
-        but only the bottom-right handle
-        of the overall group actually
-        controls resizing.
+        Draw a subtle outline around
+        the whole selected group.
     */
 
-    if (
-        selectedBoxes.includes(box)
-    ) {
+    ctx.strokeStyle =
+        "rgba(22,119,255,.7)";
 
-        const handleSize = 18;
+    ctx.lineWidth = 2;
 
+    ctx.setLineDash([8, 6]);
 
-        ctx.fillStyle =
-            "#1677ff";
+    ctx.strokeRect(
+        bounds.left,
+        bounds.top,
+        bounds.right -
+            bounds.left,
+        bounds.bottom -
+            bounds.top
+    );
 
-
-        ctx.fillRect(
-
-            box.x +
-                box.width -
-                handleSize / 2,
-
-            box.y +
-                box.height -
-                handleSize / 2,
-
-            handleSize,
-
-            handleSize
-        );
-    }
+    ctx.setLineDash([]);
 }
 
 
@@ -798,8 +779,8 @@ canvas.addEventListener(
 
 
         /*
-            If currently editing a number,
-            finish editing first.
+            If already editing, clicking
+            somewhere else finishes editing.
         */
 
         if (editingBox) {
@@ -809,18 +790,16 @@ canvas.addEventListener(
         }
 
 
-        /*
-            SHIFT + CLICK
-
-            Add/remove individual boxes.
-        */
-
         const clickedBox =
             findBox(
                 point.x,
                 point.y
             );
 
+
+        /*
+            SHIFT + CLICK
+        */
 
         if (
             event.shiftKey &&
@@ -838,7 +817,7 @@ canvas.addEventListener(
 
 
         /*
-            Check group resize handle.
+            GROUP RESIZE HANDLE
         */
 
         if (
@@ -859,30 +838,55 @@ canvas.addEventListener(
 
 
         /*
-            Click an existing box.
+            CLICK BOX
         */
 
         if (clickedBox) {
 
             /*
-                If clicking an unselected box,
-                select only that box.
+                If clicking an already-selected
+                single box, begin editing.
+
+                This is the important fix.
             */
 
             if (
-                !selectedBoxes.includes(
-                    clickedBox
-                )
+                selectedBoxes.length === 1 &&
+                selectedBoxes[0] === clickedBox
             ) {
 
                 selectedBoxes =
                     [clickedBox];
 
+                editingBox =
+                    clickedBox;
+
+                /*
+                    Start with empty typing
+                    so typing replaces 100.
+                */
+
+                typingValue = "";
+
+                draw();
+
+                return;
             }
 
 
             /*
-                Start moving all selected boxes.
+                Otherwise select this box.
+            */
+
+            selectedBoxes =
+                [clickedBox];
+
+
+            draw();
+
+
+            /*
+                Start dragging.
             */
 
             dragging = true;
@@ -913,14 +917,12 @@ canvas.addEventListener(
                 );
 
 
-            draw();
-
             return;
         }
 
 
         /*
-            Clicked empty space.
+            EMPTY SPACE
 
             Start rectangle selection.
         */
@@ -935,33 +937,6 @@ canvas.addEventListener(
             point.y;
 
 
-        selectionBox.style.display =
-            "block";
-
-
-        selectionBox.style.left =
-            event.clientX -
-            workspace.getBoundingClientRect().left +
-            "px";
-
-
-        selectionBox.style.top =
-            event.clientY -
-            workspace.getBoundingClientRect().top +
-            "px";
-
-
-        selectionBox.style.width =
-            "0px";
-
-        selectionBox.style.height =
-            "0px";
-
-
-        /*
-            Temporary clear selection.
-        */
-
         if (!event.shiftKey) {
 
             selectedBoxes = [];
@@ -969,6 +944,17 @@ canvas.addEventListener(
             draw();
 
         }
+
+
+        selectionBox.style.display =
+            "block";
+
+
+        selectionBox.style.width =
+            "0px";
+
+        selectionBox.style.height =
+            "0px";
 
     }
 );
@@ -989,10 +975,6 @@ canvas.addEventListener(
             getPosition(event);
 
 
-        /*
-            RECTANGLE SELECTION
-        */
-
         if (selecting) {
 
             updateSelectionRectangle(
@@ -1004,13 +986,9 @@ canvas.addEventListener(
         }
 
 
-        /*
-            GROUP RESIZE
-        */
+        if (dragging) {
 
-        if (resizing) {
-
-            resizeSelectedGroup(
+            moveSelectedGroup(
                 point.x,
                 point.y
             );
@@ -1019,13 +997,9 @@ canvas.addEventListener(
         }
 
 
-        /*
-            GROUP DRAG
-        */
+        if (resizing) {
 
-        if (dragging) {
-
-            moveSelectedGroup(
+            resizeSelectedGroup(
                 point.x,
                 point.y
             );
@@ -1080,19 +1054,6 @@ canvas.addEventListener(
 );
 
 
-canvas.addEventListener(
-    "mouseleave",
-    function() {
-
-        /*
-            Don't cancel rectangle
-            selection accidentally.
-        */
-
-    }
-);
-
-
 /* =========================================================
    RECTANGLE SELECTION
 ========================================================= */
@@ -1127,20 +1088,23 @@ function updateSelectionRectangle(
         );
 
 
-    const rect =
+    const canvasRect =
         canvas.getBoundingClientRect();
+
+    const workspaceRect =
+        workspace.getBoundingClientRect();
 
 
     selectionBox.style.left =
-        rect.left -
-        workspace.getBoundingClientRect().left +
+        canvasRect.left -
+        workspaceRect.left +
         x * zoom +
         "px";
 
 
     selectionBox.style.top =
-        rect.top -
-        workspace.getBoundingClientRect().top +
+        canvasRect.top -
+        workspaceRect.top +
         y * zoom +
         "px";
 
@@ -1195,9 +1159,7 @@ function finishRectangleSelection(event) {
 
 
     /*
-        If the drag was extremely tiny,
-        treat it as a click on empty space
-        and create a new 100 box.
+        Tiny drag = create a new box.
     */
 
     if (
@@ -1252,9 +1214,8 @@ function finishRectangleSelection(event) {
 
 
     /*
-        Select boxes that are
-        COMPLETELY inside the
-        selection rectangle.
+        Select boxes completely
+        inside selection rectangle.
     */
 
     const found =
@@ -1280,11 +1241,6 @@ function finishRectangleSelection(event) {
 
 
     if (event.shiftKey) {
-
-        /*
-            Shift rectangle selection
-            adds to existing selection.
-        */
 
         found.forEach(
             function(box) {
@@ -1317,15 +1273,13 @@ function finishRectangleSelection(event) {
 
 
 /* =========================================================
-   TOGGLE BOX SELECTION
+   TOGGLE SELECTION
 ========================================================= */
 
 function toggleBoxSelection(box) {
 
     const index =
-        selectedBoxes.indexOf(
-            box
-        );
+        selectedBoxes.indexOf(box);
 
 
     if (index >= 0) {
@@ -1340,12 +1294,13 @@ function toggleBoxSelection(box) {
         selectedBoxes.push(
             box
         );
+
     }
 }
 
 
 /* =========================================================
-   GROUP DRAG
+   MOVE GROUP
 ========================================================= */
 
 function moveSelectedGroup(
@@ -1372,10 +1327,6 @@ function moveSelectedGroup(
         }
     );
 
-
-    /*
-        Keep entire group inside image.
-    */
 
     const bounds =
         getSelectionBounds();
@@ -1425,24 +1376,17 @@ function moveSelectedGroup(
     }
 
 
-    if (
-        correctionX !== 0 ||
-        correctionY !== 0
-    ) {
+    selectedBoxes.forEach(
+        function(box) {
 
-        selectedBoxes.forEach(
-            function(box) {
+            box.x +=
+                correctionX;
 
-                box.x +=
-                    correctionX;
+            box.y +=
+                correctionY;
 
-                box.y +=
-                    correctionY;
-
-            }
-        );
-
-    }
+        }
+    );
 
 
     draw();
@@ -1450,7 +1394,7 @@ function moveSelectedGroup(
 
 
 /* =========================================================
-   SELECTION BOUNDS
+   GROUP BOUNDS
 ========================================================= */
 
 function getSelectionBounds() {
@@ -1463,17 +1407,10 @@ function getSelectionBounds() {
     }
 
 
-    let left =
-        Infinity;
-
-    let top =
-        Infinity;
-
-    let right =
-        -Infinity;
-
-    let bottom =
-        -Infinity;
+    let left = Infinity;
+    let top = Infinity;
+    let right = -Infinity;
+    let bottom = -Infinity;
 
 
     selectedBoxes.forEach(
@@ -1632,7 +1569,7 @@ function startGroupResize(
 
 
 /* =========================================================
-   RESIZE SELECTED GROUP
+   RESIZE GROUP
 ========================================================= */
 
 function resizeSelectedGroup(
@@ -1643,16 +1580,8 @@ function resizeSelectedGroup(
     if (!resizeGroup) return;
 
 
-    const startWidth =
-        resizeGroup.width;
-
-
-    const startHeight =
-        resizeGroup.height;
-
-
     let newWidth =
-        startWidth +
+        resizeGroup.width +
         (
             x -
             resizeStartX
@@ -1660,16 +1589,12 @@ function resizeSelectedGroup(
 
 
     let newHeight =
-        startHeight +
+        resizeGroup.height +
         (
             y -
             resizeStartY
         );
 
-
-    /*
-        Minimum group size.
-    */
 
     newWidth =
         Math.max(
@@ -1684,11 +1609,6 @@ function resizeSelectedGroup(
             newHeight
         );
 
-
-    /*
-        Don't allow the group
-        to become enormous.
-    */
 
     newWidth =
         Math.min(
@@ -1708,12 +1628,12 @@ function resizeSelectedGroup(
 
     const scaleX =
         newWidth /
-        startWidth;
+        resizeGroup.width;
 
 
     const scaleY =
         newHeight /
-        startHeight;
+        resizeGroup.height;
 
 
     resizeGroup.boxes.forEach(
@@ -1762,9 +1682,9 @@ function resizeSelectedGroup(
 ========================================================= */
 
 /*
-    When a box is selected, simply start typing.
-
-    No popup.
+    When a box is selected and the user
+    types a number, the old number is
+    replaced immediately.
 */
 
 document.addEventListener(
@@ -1772,8 +1692,7 @@ document.addEventListener(
     function(event) {
 
         /*
-            Don't intercept keyboard shortcuts
-            when typing into another HTML input.
+            Don't interfere with sliders.
         */
 
         if (
@@ -1786,59 +1705,11 @@ document.addEventListener(
 
 
         /*
-            Delete selected boxes.
+            ENTER
         */
 
         if (
-            (
-                event.key ===
-                "Delete" ||
-
-                event.key ===
-                "Backspace"
-            ) &&
-            selectedBoxes.length > 0
-        ) {
-
-            event.preventDefault();
-
-            deleteSelected();
-
-            return;
-        }
-
-
-        /*
-            Escape cancels typing.
-        */
-
-        if (
-            event.key ===
-            "Escape"
-        ) {
-
-            if (editingBox) {
-
-                editingBox =
-                    null;
-
-                typingValue = "";
-
-                draw();
-
-            }
-
-            return;
-        }
-
-
-        /*
-            Enter finishes typing.
-        */
-
-        if (
-            event.key ===
-            "Enter"
+            event.key === "Enter"
         ) {
 
             if (editingBox) {
@@ -1852,15 +1723,102 @@ document.addEventListener(
 
 
         /*
-            If a number or decimal point
-            is pressed, start direct editing.
+            ESCAPE
         */
 
         if (
-            /^[0-9.]$/.test(
+            event.key === "Escape"
+        ) {
+
+            if (editingBox) {
+
+                editingBox = null;
+
+                typingValue = "";
+
+                draw();
+
+            }
+
+            return;
+        }
+
+
+        /*
+            BACKSPACE WHILE EDITING
+        */
+
+        if (
+            event.key === "Backspace" &&
+            editingBox
+        ) {
+
+            event.preventDefault();
+
+
+            typingValue =
+                typingValue.slice(
+                    0,
+                    -1
+                );
+
+
+            editingBox.price =
+                typingValue || "0";
+
+
+            draw();
+
+            return;
+        }
+
+
+        /*
+            DELETE WHILE EDITING
+
+            Delete should behave like
+            Backspace for the number.
+        */
+
+        if (
+            event.key === "Delete" &&
+            editingBox
+        ) {
+
+            event.preventDefault();
+
+
+            typingValue =
+                typingValue.slice(
+                    0,
+                    -1
+                );
+
+
+            editingBox.price =
+                typingValue || "0";
+
+
+            draw();
+
+            return;
+        }
+
+
+        /*
+            NUMBER KEY
+        */
+
+        if (
+            /^[0-9]$/.test(
                 event.key
             )
         ) {
+
+            /*
+                Only direct-edit a single
+                selected box.
+            */
 
             if (
                 selectedBoxes.length === 1
@@ -1869,6 +1827,21 @@ document.addEventListener(
                 const box =
                     selectedBoxes[0];
 
+
+                /*
+                    Start editing automatically
+                    if not already editing.
+
+                    This means:
+
+                    select box
+                    press 2
+                    -> 2
+
+                    instead of
+
+                    1002
+                */
 
                 if (
                     editingBox !== box
@@ -1893,47 +1866,8 @@ document.addEventListener(
 
                 draw();
 
-                return;
-            }
-        }
-
-
-        /*
-            Backspace while editing.
-        */
-
-        if (
-            event.key ===
-            "Backspace" &&
-            editingBox
-        ) {
-
-            event.preventDefault();
-
-            typingValue =
-                typingValue.slice(
-                    0,
-                    -1
-                );
-
-
-            if (
-                typingValue === ""
-            ) {
-
-                typingValue =
-                    "0";
-
             }
 
-
-            editingBox.price =
-                typingValue;
-
-
-            draw();
-
-            return;
         }
 
     }
@@ -1949,8 +1883,12 @@ function finishEditing() {
     if (!editingBox) return;
 
 
+    /*
+        Prevent blank price.
+    */
+
     if (
-        typingValue === "" ||
+        !typingValue ||
         typingValue === "."
     ) {
 
@@ -1968,6 +1906,7 @@ function finishEditing() {
     editingBox = null;
 
     typingValue = "";
+
 
     saveHistory();
 
@@ -2004,6 +1943,11 @@ canvas.addEventListener(
             [box];
 
 
+        /*
+            Double-click starts editing
+            with the existing number visible.
+        */
+
         editingBox =
             box;
 
@@ -2023,10 +1967,6 @@ canvas.addEventListener(
 ========================================================= */
 
 function findBox(x, y) {
-
-    /*
-        Top-most box first.
-    */
 
     for (
         let i =
@@ -2060,6 +2000,7 @@ function findBox(x, y) {
             return box;
 
         }
+
     }
 
 
@@ -2096,7 +2037,7 @@ function getPosition(event) {
 
 
 /* =========================================================
-   KEEP INSIDE
+   KEEP BOX INSIDE IMAGE
 ========================================================= */
 
 function keepInside(box) {
@@ -2125,10 +2066,20 @@ function keepInside(box) {
 
 
 /* =========================================================
-   DELETE SELECTED
+   DELETE
 ========================================================= */
 
 function deleteSelected() {
+
+    if (
+        editingBox
+    ) {
+
+        finishEditing();
+
+        return;
+    }
+
 
     if (
         selectedBoxes.length === 0
@@ -2153,8 +2104,8 @@ function deleteSelected() {
 
     selectedBoxes = [];
 
-
     editingBox = null;
+
     typingValue = "";
 
 
@@ -2164,8 +2115,18 @@ function deleteSelected() {
 }
 
 
+document.getElementById(
+    "deleteButton"
+).onclick =
+function() {
+
+    deleteSelected();
+
+};
+
+
 /* =========================================================
-   BRIGHTNESS / CONTRAST / SATURATION
+   PHOTO ADJUSTMENTS
 ========================================================= */
 
 document.getElementById(
@@ -2329,7 +2290,8 @@ function centerCanvas() {
             0,
             (
                 workspace.clientWidth -
-                canvas.width * zoom
+                canvas.width *
+                zoom
             ) / 2
         ) + "px";
 
@@ -2339,7 +2301,8 @@ function centerCanvas() {
             0,
             (
                 workspace.clientHeight -
-                canvas.height * zoom
+                canvas.height *
+                zoom
             ) / 2
         ) + "px";
 }
@@ -2434,13 +2397,13 @@ function saveHistory() {
 
     if (
         history.length > 0 &&
-
         history[
             history.length - 1
         ] === state
     ) {
 
         return;
+
     }
 
 
@@ -2484,6 +2447,7 @@ function restoreState(state) {
     selectedBoxes = [];
 
     editingBox = null;
+
     typingValue = "";
 
 
@@ -2521,6 +2485,7 @@ function() {
     ) {
 
         return;
+
     }
 
 
@@ -2532,6 +2497,7 @@ function() {
             historyIndex
         ]
     );
+
 };
 
 
@@ -2546,6 +2512,7 @@ function() {
     ) {
 
         return;
+
     }
 
 
@@ -2557,6 +2524,7 @@ function() {
             historyIndex
         ]
     );
+
 };
 
 
@@ -2576,12 +2544,9 @@ function() {
         );
 
         return;
+
     }
 
-
-    /*
-        Finish typing first.
-    */
 
     if (editingBox) {
 
@@ -2638,7 +2603,7 @@ function() {
 
 
     /*
-        Draw boxes.
+        Draw price boxes.
     */
 
     boxes.forEach(
@@ -2709,10 +2674,6 @@ function() {
     );
 
 
-    /*
-        Download.
-    */
-
     const link =
         document.createElement(
             "a"
@@ -2730,6 +2691,7 @@ function() {
 
 
     link.click();
+
 };
 
 
@@ -2769,7 +2731,45 @@ workspace.addEventListener(
 
 
 /* =========================================================
-   RESIZE WINDOW
+   KEYBOARD DELETE
+========================================================= */
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        /*
+            If editing, the other keyboard
+            handler handles Backspace/Delete.
+        */
+
+        if (editingBox) {
+
+            return;
+
+        }
+
+
+        if (
+            (
+                event.key === "Delete" ||
+                event.key === "Backspace"
+            ) &&
+            selectedBoxes.length > 0
+        ) {
+
+            event.preventDefault();
+
+            deleteSelected();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   WINDOW RESIZE
 ========================================================= */
 
 window.addEventListener(
