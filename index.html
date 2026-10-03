@@ -1,16 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
 <title>Card Price Editor</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     margin: 0;
     width: 100%;
     height: 100%;
@@ -22,23 +28,6 @@ html, body {
 button {
     font-family: inherit;
     cursor: pointer;
-}
-
-#toolbar {
-    height: 58px;
-    background: #292a2d;
-    border-bottom: 1px solid #444;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    color: white;
-}
-
-.logo {
-    font-size: 17px;
-    font-weight: bold;
-    margin-right: 15px;
 }
 
 button {
@@ -60,6 +49,25 @@ button:hover {
 
 .download:hover {
     background: #0d63d8;
+}
+
+#toolbar {
+    height: 58px;
+    background: #292a2d;
+    border-bottom: 1px solid #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    color: white;
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.logo {
+    font-size: 17px;
+    font-weight: bold;
+    margin-right: 15px;
 }
 
 #fileInput {
@@ -142,31 +150,42 @@ input[type="range"] {
 #emptyMessage {
     position: absolute;
     inset: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
     color: #555;
     font-size: 18px;
+
     pointer-events: none;
 }
 
 #selectionBox {
     position: absolute;
+
     border: 2px dashed #1677ff;
     background: rgba(22,119,255,0.12);
+
     pointer-events: none;
+
     display: none;
 }
 
 #zoomControls {
     position: absolute;
+
     right: 18px;
     bottom: 18px;
+
     display: flex;
     align-items: center;
     gap: 4px;
+
     background: rgba(40,40,40,.9);
+
     padding: 6px;
+
     border-radius: 8px;
 }
 
@@ -182,10 +201,17 @@ input[type="range"] {
     min-width: 50px;
     text-align: center;
 }
+
 </style>
+
 </head>
 
 <body>
+
+
+<!-- =========================================================
+     TOOLBAR
+========================================================= -->
 
 <div id="toolbar">
 
@@ -193,13 +219,36 @@ input[type="range"] {
         Card Price Editor
     </div>
 
-    <button id="uploadButton">Upload Image</button>
-    <button id="undoButton">Undo</button>
-    <button id="redoButton">Redo</button>
-    <button id="deleteButton">Delete</button>
-    <button id="resetButton">Reset Photo</button>
+    <button id="uploadButton">
+        Upload Image
+    </button>
 
-    <button class="download" id="downloadButton">
+    <button id="undoButton">
+        Undo
+    </button>
+
+    <button id="redoButton">
+        Redo
+    </button>
+
+    <button id="deleteButton">
+        Delete
+    </button>
+
+    <button id="resetButton">
+        Reset Photo
+    </button>
+
+    <button id="rotateLeftButton">
+        ↶ Rotate Left
+    </button>
+
+    <button id="rotateRightButton">
+        ↷ Rotate Right
+    </button>
+
+    <button class="download"
+            id="downloadButton">
         Download PNG
     </button>
 
@@ -211,17 +260,37 @@ input[type="range"] {
 
 </div>
 
+
+<!-- =========================================================
+     APPLICATION
+========================================================= -->
+
 <div id="app">
+
+
+    <!-- SIDEBAR -->
 
     <div id="sidebar">
 
-        <h3>Photo Adjustments</h3>
+        <h3>
+            Photo Adjustments
+        </h3>
+
+
+        <!-- BRIGHTNESS -->
 
         <div class="control">
 
             <div class="control-label">
-                <span>Brightness</span>
-                <span id="brightnessValue">100%</span>
+
+                <span>
+                    Brightness
+                </span>
+
+                <span id="brightnessValue">
+                    100%
+                </span>
+
             </div>
 
             <input
@@ -234,11 +303,21 @@ input[type="range"] {
 
         </div>
 
+
+        <!-- CONTRAST -->
+
         <div class="control">
 
             <div class="control-label">
-                <span>Contrast</span>
-                <span id="contrastValue">100%</span>
+
+                <span>
+                    Contrast
+                </span>
+
+                <span id="contrastValue">
+                    100%
+                </span>
+
             </div>
 
             <input
@@ -251,11 +330,21 @@ input[type="range"] {
 
         </div>
 
+
+        <!-- SATURATION -->
+
         <div class="control">
 
             <div class="control-label">
-                <span>Saturation</span>
-                <span id="saturationValue">100%</span>
+
+                <span>
+                    Saturation
+                </span>
+
+                <span id="saturationValue">
+                    100%
+                </span>
+
             </div>
 
             <input
@@ -268,41 +357,64 @@ input[type="range"] {
 
         </div>
 
+
+        <!-- HELP -->
+
         <div class="help">
 
-            <strong>How to use</strong>
+            <strong>
+                How to use
+            </strong>
 
             <br><br>
 
             Click empty space to create a
-            <strong>100</strong> price box.
+            <strong>100</strong> box.
 
             <br><br>
 
-            <strong>Click a box</strong> to select it.
+            <strong>Click a box</strong>
+            to select it.
 
             <br><br>
 
-            <strong>Click the selected box again</strong>
-            to edit the number.
+            <strong>Type immediately</strong>
+            to replace the text.
 
             <br><br>
 
-            Simply type the new number.
+            You can use:
+
+            <br>
+
+            <strong>
+                A, B, 100, A1, EX, $50, PSA10
+            </strong>
 
             <br><br>
 
-            Press <strong>Enter</strong> to finish.
+            <strong>Double-click</strong>
+            a box to edit its existing text.
 
             <br><br>
 
-            <strong>Shift + click</strong> to select
-            multiple boxes.
+            Press <strong>Enter</strong>
+            to finish editing.
 
             <br><br>
 
-            Drag a selected box to move all
-            selected boxes.
+            Press <strong>Escape</strong>
+            to cancel editing.
+
+            <br><br>
+
+            <strong>Shift + click</strong>
+            to select multiple boxes.
+
+            <br><br>
+
+            Drag a selected box to move
+            all selected boxes.
 
             <br><br>
 
@@ -311,13 +423,22 @@ input[type="range"] {
 
             <br><br>
 
-            Press <strong>Delete</strong> or
-            <strong>Backspace</strong> to delete
-            selected boxes.
+            Press <strong>Delete</strong>
+            or <strong>Backspace</strong>
+            to delete selected boxes.
+
+            <br><br>
+
+            Use <strong>Rotate Left</strong>
+            or <strong>Rotate Right</strong>
+            to rotate the image.
 
         </div>
 
     </div>
+
+
+    <!-- WORKSPACE -->
 
     <div id="workspace">
 
@@ -329,24 +450,35 @@ input[type="range"] {
 
         <div id="selectionBox"></div>
 
+
+        <!-- ZOOM -->
+
         <div id="zoomControls">
 
             <button
                 class="zoomButton"
                 id="zoomOut"
-            >−</button>
+            >
+                −
+            </button>
 
-            <span id="zoomLabel">100%</span>
+            <span id="zoomLabel">
+                100%
+            </span>
 
             <button
                 class="zoomButton"
                 id="zoomIn"
-            >+</button>
+            >
+                +
+            </button>
 
             <button
                 class="zoomButton"
                 id="fitButton"
-            >Fit</button>
+            >
+                Fit
+            </button>
 
         </div>
 
@@ -354,7 +486,9 @@ input[type="range"] {
 
 </div>
 
+
 <script>
+
 
 /* =========================================================
    VARIABLES
@@ -381,6 +515,19 @@ const selectionBox =
 
 let image = null;
 
+
+/*
+    Every box looks like:
+
+    {
+        x,
+        y,
+        width,
+        height,
+        text
+    }
+*/
+
 let boxes = [];
 
 let selectedBoxes = [];
@@ -389,30 +536,59 @@ let editingBox = null;
 
 let typingValue = "";
 
+
 let brightness = 100;
+
 let contrast = 100;
+
 let saturation = 100;
+
+
+/*
+    Image rotation.
+
+    0
+    90
+    180
+    270
+*/
+
+let rotation = 0;
+
 
 let zoom = 1;
 
+
 let dragging = false;
+
 let resizing = false;
+
 let selecting = false;
 
+
 let dragStartX = 0;
+
 let dragStartY = 0;
+
 
 let dragOriginalPositions = [];
 
+
 let selectionStartX = 0;
+
 let selectionStartY = 0;
 
+
 let resizeStartX = 0;
+
 let resizeStartY = 0;
+
 
 let resizeGroup = null;
 
+
 let history = [];
+
 let historyIndex = -1;
 
 
@@ -420,7 +596,9 @@ let historyIndex = -1;
    UPLOAD
 ========================================================= */
 
-document.getElementById("uploadButton").onclick =
+document.getElementById(
+    "uploadButton"
+).onclick =
 function() {
 
     fileInput.click();
@@ -447,7 +625,9 @@ function loadImage(file) {
         !file.type ||
         !file.type.startsWith("image/")
     ) {
+
         return;
+
     }
 
 
@@ -467,6 +647,10 @@ function loadImage(file) {
 
             image = img;
 
+
+            rotation = 0;
+
+
             canvas.width =
                 img.naturalWidth;
 
@@ -484,7 +668,9 @@ function loadImage(file) {
 
 
             brightness = 100;
+
             contrast = 100;
+
             saturation = 100;
 
 
@@ -492,9 +678,11 @@ function loadImage(file) {
                 "brightness"
             ).value = 100;
 
+
             document.getElementById(
                 "contrast"
             ).value = 100;
+
 
             document.getElementById(
                 "saturation"
@@ -530,6 +718,7 @@ function loadImage(file) {
 
 
     reader.readAsDataURL(file);
+
 }
 
 
@@ -550,6 +739,13 @@ function draw() {
     );
 
 
+    /*
+        Draw adjusted image.
+    */
+
+    ctx.save();
+
+
     ctx.filter =
         "brightness(" +
         brightness +
@@ -560,17 +756,107 @@ function draw() {
         "%)";
 
 
-    ctx.drawImage(
-        image,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
+    /*
+        Rotation 0°
+    */
+
+    if (rotation === 0) {
+
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+    }
 
 
-    ctx.filter = "none";
+    /*
+        Rotation 90° clockwise
+    */
 
+    else if (rotation === 90) {
+
+        ctx.translate(
+            canvas.width,
+            0
+        );
+
+        ctx.rotate(
+            Math.PI / 2
+        );
+
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+    }
+
+
+    /*
+        Rotation 180°
+    */
+
+    else if (rotation === 180) {
+
+        ctx.translate(
+            canvas.width,
+            canvas.height
+        );
+
+        ctx.rotate(
+            Math.PI
+        );
+
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+    }
+
+
+    /*
+        Rotation 270° clockwise
+    */
+
+    else if (rotation === 270) {
+
+        ctx.translate(
+            0,
+            canvas.height
+        );
+
+        ctx.rotate(
+            -Math.PI / 2
+        );
+
+        ctx.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+    }
+
+
+    ctx.restore();
+
+
+    /*
+        Draw boxes.
+    */
 
     boxes.forEach(
         function(box) {
@@ -582,8 +868,7 @@ function draw() {
 
 
     /*
-        Draw ONE resize handle for
-        the entire selected group.
+        Draw group resize handle.
     */
 
     if (
@@ -594,6 +879,7 @@ function draw() {
         drawGroupHandle();
 
     }
+
 }
 
 
@@ -602,6 +888,10 @@ function draw() {
 ========================================================= */
 
 function drawBox(box) {
+
+    /*
+        White box.
+    */
 
     ctx.fillStyle =
         "#ffffff";
@@ -615,6 +905,10 @@ function drawBox(box) {
     );
 
 
+    /*
+        Selected box.
+    */
+
     if (
         selectedBoxes.includes(box)
     ) {
@@ -625,7 +919,9 @@ function drawBox(box) {
         ctx.lineWidth =
             5;
 
-    } else {
+    }
+
+    else {
 
         ctx.strokeStyle =
             "#222";
@@ -645,18 +941,69 @@ function drawBox(box) {
 
 
     /*
-        FONT SIZE
-
-        The number gets larger
-        automatically as the box grows.
+        Determine displayed text.
     */
 
-    const fontSize =
+    let displayedText =
+        box.text || "100";
+
+
+    if (
+        editingBox === box
+    ) {
+
+        displayedText =
+            typingValue;
+
+    }
+
+
+    /*
+        Automatically calculate
+        a font size that fits.
+    */
+
+    let fontSize =
         Math.max(
-            42,
+            24,
             box.height * 0.72
         );
 
+
+    const maxTextWidth =
+        box.width * 0.90;
+
+
+    while (
+        fontSize > 18
+    ) {
+
+        ctx.font =
+            "bold " +
+            fontSize +
+            "px Arial";
+
+
+        if (
+            ctx.measureText(
+                displayedText
+            ).width <=
+            maxTextWidth
+        ) {
+
+            break;
+
+        }
+
+
+        fontSize -= 2;
+
+    }
+
+
+    /*
+        Text.
+    */
 
     ctx.fillStyle =
         "#111";
@@ -676,31 +1023,14 @@ function drawBox(box) {
         "middle";
 
 
-    let displayedPrice =
-        box.price;
-
-
-    /*
-        Show current typed number.
-    */
-
-    if (
-        editingBox === box
-    ) {
-
-        displayedPrice =
-            typingValue;
-
-    }
-
-
     ctx.fillText(
-        displayedPrice,
+        displayedText,
         box.x +
             box.width / 2,
         box.y +
             box.height / 2
     );
+
 }
 
 
@@ -735,31 +1065,43 @@ function drawGroupHandle() {
         size,
 
         size
+
     );
 
 
     /*
-        Draw a subtle outline around
-        the whole selected group.
+        Group outline.
     */
 
     ctx.strokeStyle =
         "rgba(22,119,255,.7)";
 
+
     ctx.lineWidth = 2;
 
-    ctx.setLineDash([8, 6]);
 
-    ctx.strokeRect(
-        bounds.left,
-        bounds.top,
-        bounds.right -
-            bounds.left,
-        bounds.bottom -
-            bounds.top
+    ctx.setLineDash(
+        [8, 6]
     );
 
+
+    ctx.strokeRect(
+
+        bounds.left,
+
+        bounds.top,
+
+        bounds.right -
+            bounds.left,
+
+        bounds.bottom -
+            bounds.top
+
+    );
+
+
     ctx.setLineDash([]);
+
 }
 
 
@@ -779,8 +1121,8 @@ canvas.addEventListener(
 
 
         /*
-            If already editing, clicking
-            somewhere else finishes editing.
+            Finish editing if the user
+            clicks somewhere else.
         */
 
         if (editingBox) {
@@ -813,6 +1155,7 @@ canvas.addEventListener(
             draw();
 
             return;
+
         }
 
 
@@ -834,6 +1177,7 @@ canvas.addEventListener(
             );
 
             return;
+
         }
 
 
@@ -843,11 +1187,11 @@ canvas.addEventListener(
 
         if (clickedBox) {
 
-            /*
-                If clicking an already-selected
-                single box, begin editing.
 
-                This is the important fix.
+            /*
+                If the already selected
+                single box is clicked,
+                begin editing.
             */
 
             if (
@@ -858,24 +1202,24 @@ canvas.addEventListener(
                 selectedBoxes =
                     [clickedBox];
 
+
                 editingBox =
                     clickedBox;
 
-                /*
-                    Start with empty typing
-                    so typing replaces 100.
-                */
 
-                typingValue = "";
+                typingValue =
+                    "";
+
 
                 draw();
 
                 return;
+
             }
 
 
             /*
-                Otherwise select this box.
+                Otherwise select box.
             */
 
             selectedBoxes =
@@ -886,7 +1230,7 @@ canvas.addEventListener(
 
 
             /*
-                Start dragging.
+                Begin dragging.
             */
 
             dragging = true;
@@ -918,13 +1262,14 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
         /*
             EMPTY SPACE
 
-            Start rectangle selection.
+            Start selection rectangle.
         */
 
         selecting = true;
@@ -953,6 +1298,7 @@ canvas.addEventListener(
         selectionBox.style.width =
             "0px";
 
+
         selectionBox.style.height =
             "0px";
 
@@ -978,11 +1324,11 @@ canvas.addEventListener(
         if (selecting) {
 
             updateSelectionRectangle(
-                event,
                 point
             );
 
             return;
+
         }
 
 
@@ -994,6 +1340,7 @@ canvas.addEventListener(
             );
 
             return;
+
         }
 
 
@@ -1005,6 +1352,7 @@ canvas.addEventListener(
             );
 
             return;
+
         }
 
     }
@@ -1026,6 +1374,7 @@ canvas.addEventListener(
             );
 
             return;
+
         }
 
 
@@ -1036,6 +1385,7 @@ canvas.addEventListener(
             saveHistory();
 
             return;
+
         }
 
 
@@ -1048,6 +1398,7 @@ canvas.addEventListener(
             saveHistory();
 
             return;
+
         }
 
     }
@@ -1059,7 +1410,6 @@ canvas.addEventListener(
 ========================================================= */
 
 function updateSelectionRectangle(
-    event,
     point
 ) {
 
@@ -1069,17 +1419,20 @@ function updateSelectionRectangle(
             point.x
         );
 
+
     const y =
         Math.min(
             selectionStartY,
             point.y
         );
 
+
     const width =
         Math.abs(
             point.x -
             selectionStartX
         );
+
 
     const height =
         Math.abs(
@@ -1090,6 +1443,7 @@ function updateSelectionRectangle(
 
     const canvasRect =
         canvas.getBoundingClientRect();
+
 
     const workspaceRect =
         workspace.getBoundingClientRect();
@@ -1117,6 +1471,7 @@ function updateSelectionRectangle(
     selectionBox.style.height =
         height * zoom +
         "px";
+
 }
 
 
@@ -1139,17 +1494,20 @@ function finishRectangleSelection(event) {
             point.x
         );
 
+
     const right =
         Math.max(
             selectionStartX,
             point.x
         );
 
+
     const top =
         Math.min(
             selectionStartY,
             point.y
         );
+
 
     const bottom =
         Math.max(
@@ -1159,13 +1517,16 @@ function finishRectangleSelection(event) {
 
 
     /*
-        Tiny drag = create a new box.
+        Tiny click.
+
+        Create a new box.
     */
 
     if (
         Math.abs(
             right - left
         ) < 8 &&
+
         Math.abs(
             bottom - top
         ) < 8
@@ -1185,7 +1546,7 @@ function finishRectangleSelection(event) {
             height:
                 100,
 
-            price:
+            text:
                 "100"
 
         };
@@ -1210,6 +1571,7 @@ function finishRectangleSelection(event) {
         draw();
 
         return;
+
     }
 
 
@@ -1260,7 +1622,9 @@ function finishRectangleSelection(event) {
             }
         );
 
-    } else {
+    }
+
+    else {
 
         selectedBoxes =
             found;
@@ -1269,6 +1633,7 @@ function finishRectangleSelection(event) {
 
 
     draw();
+
 }
 
 
@@ -1289,13 +1654,16 @@ function toggleBoxSelection(box) {
             1
         );
 
-    } else {
+    }
+
+    else {
 
         selectedBoxes.push(
             box
         );
 
     }
+
 }
 
 
@@ -1309,10 +1677,13 @@ function moveSelectedGroup(
 ) {
 
     const dx =
-        x - dragStartX;
+        x -
+        dragStartX;
+
 
     const dy =
-        y - dragStartY;
+        y -
+        dragStartY;
 
 
     dragOriginalPositions.forEach(
@@ -1320,6 +1691,7 @@ function moveSelectedGroup(
 
             item.box.x =
                 item.x + dx;
+
 
             item.box.y =
                 item.y + dy;
@@ -1333,10 +1705,13 @@ function moveSelectedGroup(
 
 
     let correctionX = 0;
+
     let correctionY = 0;
 
 
-    if (bounds.left < 0) {
+    if (
+        bounds.left < 0
+    ) {
 
         correctionX =
             -bounds.left;
@@ -1356,7 +1731,9 @@ function moveSelectedGroup(
     }
 
 
-    if (bounds.top < 0) {
+    if (
+        bounds.top < 0
+    ) {
 
         correctionY =
             -bounds.top;
@@ -1382,6 +1759,7 @@ function moveSelectedGroup(
             box.x +=
                 correctionX;
 
+
             box.y +=
                 correctionY;
 
@@ -1390,6 +1768,7 @@ function moveSelectedGroup(
 
 
     draw();
+
 }
 
 
@@ -1404,12 +1783,16 @@ function getSelectionBounds() {
     ) {
 
         return null;
+
     }
 
 
     let left = Infinity;
+
     let top = Infinity;
+
     let right = -Infinity;
+
     let bottom = -Infinity;
 
 
@@ -1422,11 +1805,13 @@ function getSelectionBounds() {
                     box.x
                 );
 
+
             top =
                 Math.min(
                     top,
                     box.y
                 );
+
 
             right =
                 Math.max(
@@ -1434,6 +1819,7 @@ function getSelectionBounds() {
                     box.x +
                     box.width
                 );
+
 
             bottom =
                 Math.max(
@@ -1447,11 +1833,17 @@ function getSelectionBounds() {
 
 
     return {
+
         left,
+
         top,
+
         right,
+
         bottom
+
     };
+
 }
 
 
@@ -1493,6 +1885,7 @@ function isGroupResizeHandle(
             size
 
     );
+
 }
 
 
@@ -1510,6 +1903,7 @@ function startGroupResize(
 
     resizeStartX =
         x;
+
 
     resizeStartY =
         y;
@@ -1565,6 +1959,7 @@ function startGroupResize(
             )
 
     };
+
 }
 
 
@@ -1643,6 +2038,7 @@ function resizeSelectedGroup(
                 item.x -
                 resizeGroup.left;
 
+
             const relativeY =
                 item.y -
                 resizeGroup.top;
@@ -1674,22 +2070,18 @@ function resizeSelectedGroup(
 
 
     draw();
+
 }
 
 
 /* =========================================================
-   DIRECT NUMBER EDITING
+   TEXT EDITING
 ========================================================= */
-
-/*
-    When a box is selected and the user
-    types a number, the old number is
-    replaced immediately.
-*/
 
 document.addEventListener(
     "keydown",
     function(event) {
+
 
         /*
             Don't interfere with sliders.
@@ -1701,6 +2093,7 @@ document.addEventListener(
         ) {
 
             return;
+
         }
 
 
@@ -1719,6 +2112,7 @@ document.addEventListener(
             }
 
             return;
+
         }
 
 
@@ -1741,11 +2135,12 @@ document.addEventListener(
             }
 
             return;
+
         }
 
 
         /*
-            BACKSPACE WHILE EDITING
+            BACKSPACE
         */
 
         if (
@@ -1763,21 +2158,19 @@ document.addEventListener(
                 );
 
 
-            editingBox.price =
-                typingValue || "0";
+            editingBox.text =
+                typingValue;
 
 
             draw();
 
             return;
+
         }
 
 
         /*
-            DELETE WHILE EDITING
-
-            Delete should behave like
-            Backspace for the number.
+            DELETE
         */
 
         if (
@@ -1795,30 +2188,40 @@ document.addEventListener(
                 );
 
 
-            editingBox.price =
-                typingValue || "0";
+            editingBox.text =
+                typingValue;
 
 
             draw();
 
             return;
+
         }
 
 
         /*
-            NUMBER KEY
+            ANY PRINTABLE CHARACTER
+
+            This allows:
+
+            A
+            B
+            1
+            2
+            A1
+            EX
+            $
+            #
+            -
+            +
+            /
+            .
+            etc.
         */
 
         if (
-            /^[0-9]$/.test(
-                event.key
-            )
+            event.key.length === 1
         ) {
-
-            /*
-                Only direct-edit a single
-                selected box.
-            */
 
             if (
                 selectedBoxes.length === 1
@@ -1829,18 +2232,7 @@ document.addEventListener(
 
 
                 /*
-                    Start editing automatically
-                    if not already editing.
-
-                    This means:
-
-                    select box
-                    press 2
-                    -> 2
-
-                    instead of
-
-                    1002
+                    Start editing.
                 */
 
                 if (
@@ -1860,7 +2252,7 @@ document.addEventListener(
                     event.key;
 
 
-                box.price =
+                box.text =
                     typingValue;
 
 
@@ -1884,20 +2276,21 @@ function finishEditing() {
 
 
     /*
-        Prevent blank price.
+        Prevent completely empty boxes.
     */
 
     if (
-        !typingValue ||
-        typingValue === "."
+        !typingValue
     ) {
 
-        editingBox.price =
+        editingBox.text =
             "100";
 
-    } else {
+    }
 
-        editingBox.price =
+    else {
+
+        editingBox.text =
             typingValue;
 
     }
@@ -1911,6 +2304,7 @@ function finishEditing() {
     saveHistory();
 
     draw();
+
 }
 
 
@@ -1943,17 +2337,17 @@ canvas.addEventListener(
             [box];
 
 
-        /*
-            Double-click starts editing
-            with the existing number visible.
-        */
-
         editingBox =
             box;
 
 
+        /*
+            Double click keeps
+            existing text.
+        */
+
         typingValue =
-            box.price;
+            box.text;
 
 
         draw();
@@ -1966,7 +2360,10 @@ canvas.addEventListener(
    FIND BOX
 ========================================================= */
 
-function findBox(x, y) {
+function findBox(
+    x,
+    y
+) {
 
     for (
         let i =
@@ -2005,6 +2402,7 @@ function findBox(x, y) {
 
 
     return null;
+
 }
 
 
@@ -2026,6 +2424,7 @@ function getPosition(event) {
                 rect.left
             ) / zoom,
 
+
         y:
             (
                 event.clientY -
@@ -2033,6 +2432,7 @@ function getPosition(event) {
             ) / zoom
 
     };
+
 }
 
 
@@ -2062,6 +2462,7 @@ function keepInside(box) {
                 box.y
             )
         );
+
 }
 
 
@@ -2071,13 +2472,12 @@ function keepInside(box) {
 
 function deleteSelected() {
 
-    if (
-        editingBox
-    ) {
+    if (editingBox) {
 
         finishEditing();
 
         return;
+
     }
 
 
@@ -2086,6 +2486,7 @@ function deleteSelected() {
     ) {
 
         return;
+
     }
 
 
@@ -2112,6 +2513,7 @@ function deleteSelected() {
     saveHistory();
 
     draw();
+
 }
 
 
@@ -2139,9 +2541,11 @@ function(event) {
             event.target.value
         );
 
+
     updateLabels();
 
     draw();
+
 };
 
 
@@ -2155,9 +2559,11 @@ function(event) {
             event.target.value
         );
 
+
     updateLabels();
 
     draw();
+
 };
 
 
@@ -2171,9 +2577,11 @@ function(event) {
             event.target.value
         );
 
+
     updateLabels();
 
     draw();
+
 };
 
 
@@ -2195,11 +2603,12 @@ function updateLabels() {
         "saturationValue"
     ).textContent =
         saturation + "%";
+
 }
 
 
 /* =========================================================
-   RESET PHOTO
+   RESET PHOTO ADJUSTMENTS
 ========================================================= */
 
 document.getElementById(
@@ -2208,7 +2617,9 @@ document.getElementById(
 function() {
 
     brightness = 100;
+
     contrast = 100;
+
     saturation = 100;
 
 
@@ -2230,6 +2641,230 @@ function() {
     updateLabels();
 
     draw();
+
+};
+
+
+/* =========================================================
+   ROTATION
+========================================================= */
+
+function rotateImage(
+    direction
+) {
+
+    if (!image) {
+
+        alert(
+            "Please upload an image first."
+        );
+
+        return;
+
+    }
+
+
+    /*
+        Finish text editing first.
+    */
+
+    if (editingBox) {
+
+        finishEditing();
+
+    }
+
+
+    /*
+        Save old canvas dimensions.
+    */
+
+    const oldWidth =
+        canvas.width;
+
+
+    const oldHeight =
+        canvas.height;
+
+
+    /*
+        Change rotation.
+    */
+
+    if (
+        direction === "right"
+    ) {
+
+        rotation =
+            (
+                rotation +
+                90
+            ) % 360;
+
+    }
+
+    else {
+
+        rotation =
+            (
+                rotation +
+                270
+            ) % 360;
+
+    }
+
+
+    /*
+        Swap canvas dimensions
+        for 90° and 270°.
+    */
+
+    if (
+        rotation === 90 ||
+        rotation === 270
+    ) {
+
+        canvas.width =
+            oldHeight;
+
+        canvas.height =
+            oldWidth;
+
+    }
+
+    else {
+
+        canvas.width =
+            oldWidth;
+
+        canvas.height =
+            oldHeight;
+
+    }
+
+
+    /*
+        Move boxes with the image.
+
+        The boxes remain attached
+        to the same cards.
+    */
+
+    boxes.forEach(
+        function(box) {
+
+            const x =
+                box.x;
+
+
+            const y =
+                box.y;
+
+
+            const w =
+                box.width;
+
+
+            const h =
+                box.height;
+
+
+            if (
+                direction === "right"
+            ) {
+
+                /*
+                    Clockwise 90°
+                */
+
+                box.x =
+                    oldHeight -
+                    y -
+                    h;
+
+
+                box.y =
+                    x;
+
+
+                box.width =
+                    h;
+
+
+                box.height =
+                    w;
+
+            }
+
+            else {
+
+                /*
+                    Counter-clockwise 90°
+                */
+
+                box.x =
+                    y;
+
+
+                box.y =
+                    oldWidth -
+                    x -
+                    w;
+
+
+                box.width =
+                    h;
+
+
+                box.height =
+                    w;
+
+            }
+
+        }
+    );
+
+
+    saveHistory();
+
+
+    fitImage();
+
+
+    draw();
+
+}
+
+
+/* =========================================================
+   ROTATE LEFT
+========================================================= */
+
+document.getElementById(
+    "rotateLeftButton"
+).onclick =
+function() {
+
+    rotateImage(
+        "left"
+    );
+
+};
+
+
+/* =========================================================
+   ROTATE RIGHT
+========================================================= */
+
+document.getElementById(
+    "rotateRightButton"
+).onclick =
+function() {
+
+    rotateImage(
+        "right"
+    );
+
 };
 
 
@@ -2279,7 +2914,9 @@ function fitImage() {
 
     applyZoom();
 
+
     centerCanvas();
+
 }
 
 
@@ -2305,6 +2942,7 @@ function centerCanvas() {
                 zoom
             ) / 2
         ) + "px";
+
 }
 
 
@@ -2322,6 +2960,7 @@ function applyZoom() {
         Math.round(
             zoom * 100
         ) + "%";
+
 }
 
 
@@ -2336,7 +2975,9 @@ function() {
             zoom + 0.1
         );
 
+
     applyZoom();
+
 };
 
 
@@ -2351,7 +2992,9 @@ function() {
             zoom - 0.1
         );
 
+
     applyZoom();
+
 };
 
 
@@ -2383,9 +3026,13 @@ function getState() {
             contrast,
 
         saturation:
-            saturation
+            saturation,
+
+        rotation:
+            rotation
 
     });
+
 }
 
 
@@ -2397,6 +3044,7 @@ function saveHistory() {
 
     if (
         history.length > 0 &&
+
         history[
             history.length - 1
         ] === state
@@ -2421,10 +3069,13 @@ function saveHistory() {
 
     historyIndex =
         history.length - 1;
+
 }
 
 
-function restoreState(state) {
+function restoreState(
+    state
+) {
 
     const data =
         JSON.parse(state);
@@ -2437,11 +3088,52 @@ function restoreState(state) {
     brightness =
         data.brightness;
 
+
     contrast =
         data.contrast;
 
+
     saturation =
         data.saturation;
+
+
+    rotation =
+        data.rotation || 0;
+
+
+    /*
+        Recalculate canvas dimensions
+        according to rotation.
+    */
+
+    if (
+        image
+    ) {
+
+        if (
+            rotation === 90 ||
+            rotation === 270
+        ) {
+
+            canvas.width =
+                image.naturalHeight;
+
+            canvas.height =
+                image.naturalWidth;
+
+        }
+
+        else {
+
+            canvas.width =
+                image.naturalWidth;
+
+            canvas.height =
+                image.naturalHeight;
+
+        }
+
+    }
 
 
     selectedBoxes = [];
@@ -2471,9 +3163,17 @@ function restoreState(state) {
 
     updateLabels();
 
+
+    fitImage();
+
     draw();
+
 }
 
+
+/* =========================================================
+   UNDO
+========================================================= */
 
 document.getElementById(
     "undoButton"
@@ -2500,6 +3200,10 @@ function() {
 
 };
 
+
+/* =========================================================
+   REDO
+========================================================= */
 
 document.getElementById(
     "redoButton"
@@ -2529,7 +3233,7 @@ function() {
 
 
 /* =========================================================
-   DOWNLOAD
+   DOWNLOAD PNG
 ========================================================= */
 
 document.getElementById(
@@ -2555,6 +3259,11 @@ function() {
     }
 
 
+    /*
+        Output canvas uses the
+        current rotated dimensions.
+    */
+
     const output =
         document.createElement(
             "canvas"
@@ -2576,7 +3285,7 @@ function() {
 
 
     /*
-        Draw adjusted photo.
+        Draw adjusted image.
     */
 
     out.filter =
@@ -2589,13 +3298,131 @@ function() {
         "%)";
 
 
-    out.drawImage(
-        image,
-        0,
-        0,
-        output.width,
-        output.height
-    );
+    /*
+        0°
+    */
+
+    if (
+        rotation === 0
+    ) {
+
+        out.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+    }
+
+
+    /*
+        90°
+    */
+
+    else if (
+        rotation === 90
+    ) {
+
+        out.save();
+
+
+        out.translate(
+            output.width,
+            0
+        );
+
+
+        out.rotate(
+            Math.PI / 2
+        );
+
+
+        out.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+
+        out.restore();
+
+    }
+
+
+    /*
+        180°
+    */
+
+    else if (
+        rotation === 180
+    ) {
+
+        out.save();
+
+
+        out.translate(
+            output.width,
+            output.height
+        );
+
+
+        out.rotate(
+            Math.PI
+        );
+
+
+        out.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+
+        out.restore();
+
+    }
+
+
+    /*
+        270°
+    */
+
+    else if (
+        rotation === 270
+    ) {
+
+        out.save();
+
+
+        out.translate(
+            0,
+            output.height
+        );
+
+
+        out.rotate(
+            -Math.PI / 2
+        );
+
+
+        out.drawImage(
+            image,
+            0,
+            0,
+            image.naturalWidth,
+            image.naturalHeight
+        );
+
+
+        out.restore();
+
+    }
 
 
     out.filter =
@@ -2603,11 +3430,15 @@ function() {
 
 
     /*
-        Draw price boxes.
+        Draw boxes.
     */
 
     boxes.forEach(
         function(box) {
+
+            /*
+                White background.
+            */
 
             out.fillStyle =
                 "#ffffff";
@@ -2620,6 +3451,10 @@ function() {
                 box.height
             );
 
+
+            /*
+                Border.
+            */
 
             out.strokeStyle =
                 "#222";
@@ -2637,11 +3472,46 @@ function() {
             );
 
 
-            const fontSize =
+            /*
+                Text.
+            */
+
+            let fontSize =
                 Math.max(
-                    42,
+                    24,
                     box.height * 0.72
                 );
+
+
+            const maxTextWidth =
+                box.width * 0.90;
+
+
+            while (
+                fontSize > 18
+            ) {
+
+                out.font =
+                    "bold " +
+                    fontSize +
+                    "px Arial";
+
+
+                if (
+                    out.measureText(
+                        box.text
+                    ).width <=
+                    maxTextWidth
+                ) {
+
+                    break;
+
+                }
+
+
+                fontSize -= 2;
+
+            }
 
 
             out.fillStyle =
@@ -2663,7 +3533,7 @@ function() {
 
 
             out.fillText(
-                box.price,
+                box.text,
                 box.x +
                     box.width / 2,
                 box.y +
@@ -2673,6 +3543,10 @@ function() {
         }
     );
 
+
+    /*
+        Download.
+    */
 
     const link =
         document.createElement(
@@ -2739,8 +3613,8 @@ document.addEventListener(
     function(event) {
 
         /*
-            If editing, the other keyboard
-            handler handles Backspace/Delete.
+            If editing, text editor
+            handles Backspace/Delete.
         */
 
         if (editingBox) {
@@ -2751,14 +3625,18 @@ document.addEventListener(
 
 
         if (
+
             (
                 event.key === "Delete" ||
                 event.key === "Backspace"
             ) &&
+
             selectedBoxes.length > 0
+
         ) {
 
             event.preventDefault();
+
 
             deleteSelected();
 
@@ -2784,6 +3662,7 @@ window.addEventListener(
 
     }
 );
+
 
 </script>
 
