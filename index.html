@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Price Editor</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#1e1e1e;
+    color:#fff;
+    overflow:hidden;
+}
+
+.toolbar{
+    height:60px;
+    background:#292929;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 14px;
+    border-bottom:1px solid #444;
+}
+
+.toolbar button{
+    background:#3a3a3a;
+    color:#fff;
+    border:1px solid #555;
+    border-radius:6px;
+    padding:8px 13px;
+    cursor:pointer;
+}
+
+.toolbar button:hover{
+    background:#4b4b4b;
+}
+
+.toolbar .download{
+    background:#1677ff;
+    border-color:#1677ff;
+}
+
+.title{
+    font-weight:bold;
+    margin-right:15px;
+}
+
+.app{
+    height:calc(100vh - 60px);
+    display:flex;
+}
+
+.sidebar{
+    width:240px;
+    background:#292929;
+    padding:20px;
+    border-right:1px solid #444;
+}
+
+.sidebar h3{
+    margin-top:0;
+}
+
+.control{
+    margin:20px 0;
+}
+
+.control label{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    margin-bottom:7px;
+}
+
+input[type=range]{
+    width:100%;
+}
+
+.canvas-area{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    background-color:#ccc;
+    background-image:
+        linear-gradient(45deg,#bbb 25%,transparent 25%),
+        linear-gradient(-45deg,#bbb 25%,transparent 25%),
+        linear-gradient(45deg,transparent 75%,#bbb 75%),
+        linear-gradient(-45deg,transparent 75%,#bbb 75%);
+    background-size:20px 20px;
+    background-position:0 0,0 10px,10px -10px,-10px 0;
+}
+
+#canvas{
+    position:absolute;
+    transform-origin:top left;
+    cursor:crosshair;
+}
+
+.empty{
+    position:absolute;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#555;
+    font-size:18px;
+    pointer-events:none;
+}
+
+.info{
+    color:#aaa;
+    font-size:12px;
+    line-height:1.6;
+    margin-top:25px;
+}
+
+input[type=file]{
+    display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="toolbar">
+
+    <div class="title">Card Price Editor</div>
+
+    <button onclick="upload.click()">Upload Image</button>
+    <button onclick="undo()">Undo</button>
+    <button onclick="redo()">Redo</button>
+    <button onclick="deleteSelected()">Delete</button>
+    <button onclick="resetPhoto()">Reset</button>
+
+    <button class="download" onclick="downloadImage()">
+        Download
+    </button>
+
+    <input id="upload" type="file" accept="image/*">
+
+</div>
+
+<div class="app">
+
+    <div class="sidebar">
+
+        <h3>Photo</h3>
+
+        <div class="control">
+            <label>
+                <span>Brightness</span>
+                <span id="brightnessText">100%</span>
+            </label>
+
+            <input
+                id="brightness"
+                type="range"
+                min="50"
+                max="150"
+                value="100"
+            >
+        </div>
+
+        <div class="control">
+            <label>
+                <span>Contrast</span>
+                <span id="contrastText">100%</span>
+            </label>
+
+            <input
+                id="contrast"
+                type="range"
+                min="50"
+                max="150"
+                value="100"
+            >
+        </div>
+
+        <div class="control">
+            <label>
+                <span>Saturation</span>
+                <span id="saturationText">100%</span>
+            </label>
+
+            <input
+                id="saturation"
+                type="range"
+                min="0"
+                max="200"
+                value="100"
+            >
+        </div>
+
+        <div class="info">
+            <b>How to use</b><br><br>
+            Upload your photo.<br>
+            Click anywhere on the image to add a price box.<br><br>
+            Drag a box to move it.<br><br>
+            Double-click a box to change the price.<br><br>
+            Select a box and press Delete or Backspace to remove it.<br><br>
+            Download when finished.
+        </div>
+
+    </div>
+
+    <div class="canvas-area" id="area">
+
+        <div class="empty" id="empty">
+            Upload an image to begin
+        </div>
+
+        <canvas id="canvas"></canvas>
+
+    </div>
+
+</div>
+
+<script>
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const area = document.getElementById("area");
+const upload = document.getElementById("upload");
+
+let image = null;
+
+let boxes = [];
+let selected = null;
+
+let brightness = 100;
+let contrast = 100;
+let saturation = 100;
+
+let zoom = 1;
+
+let dragging = false;
+let offsetX = 0;
+let offsetY = 0;
+
+let history = [];
+let historyIndex = -1;
+
+
+// ------------------------------
+// UPLOAD
+// ------------------------------
+
+upload.addEventListener("change", e => {
+
+    const file = e.target.files[0];
+
+    if(!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = e => {
+
+        const img = new Image();
+
+        img.onload = () => {
+
+            image = img;
+
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+
+            boxes = [];
+            selected = null;
+
+            brightness = 100;
+            contrast = 100;
+            saturation = 100;
+
+            document.getElementById("brightness").value = 100;
+            document.getElementById("contrast").value = 100;
+            document.getElementById("saturation").value = 100;
+
+            document.getElementById("empty").style.display = "none";
+
+            history = [];
+            historyIndex = -1;
+
+            saveHistory();
+
+            fitImage();
+
+            draw();
+        };
+
+        img.src = e.target.result;
+    };
+
+    reader.readAsDataURL(file);
+});
+
+
+// ------------------------------
+// DRAW
+// ------------------------------
+
+function draw(){
+
+    if(!image) return;
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.filter =
+        `brightness(${brightness}%)
+         contrast(${contrast}%)
+         saturate(${saturation}%)`;
+
+    ctx.drawImage(
+        image,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    ctx.filter = "none";
+
+    boxes.forEach(box => {
+
+        ctx.fillStyle = "#fff";
+
+        ctx.fillRect(
+            box.x,
+            box.y,
+            box.w,
+            box.h
+        );
+
+        ctx.lineWidth =
+            selected === box ? 4 : 2;
+
+        ctx.strokeStyle =
+            selected === box ? "#1677ff" : "#222";
+
+        ctx.strokeRect(
+            box.x,
+            box.y,
+            box.w,
+            box.h
+        );
+
+        ctx.fillStyle = "#111";
+
+        ctx.font =
+            `bold ${Math.max(18,box.h*0.45)}px Arial`;
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        ctx.fillText(
+            box.price,
+            box.x + box.w/2,
+            box.y + box.h/2
+        );
+
+    });
+}
+
+
+// ------------------------------
+// CLICK
+// ------------------------------
+
+canvas.addEventListener("mousedown", e => {
+
+    if(!image) return;
+
+    const p = position(e);
+
+    const box = findBox(p.x,p.y);
+
+    if(box){
+
+        selected = box;
+
+        dragging = true;
+
+        offsetX = p.x - box.x;
+        offsetY = p.y - box.y;
+
+        draw();
+
+        return;
+    }
+
+    // Create new box
+
+    const newBox = {
+
+        x:p.x-60,
+        y:p.y-25,
+
+        w:120,
+        h:50,
+
+        price:"500"
+
+    };
+
+    boxes.push(newBox);
+
+    selected = newBox;
+
+    saveHistory();
+
+    draw();
+
+    editPrice(newBox);
+});
+
+
+canvas.addEventListener("mousemove",e => {
+
+    if(!dragging || !selected) return;
+
+    const p = position(e);
+
+    selected.x = p.x - offsetX;
+    selected.y = p.y - offsetY;
+
+    selected.x =
+        Math.max(
+            0,
+            Math.min(
+                canvas.width-selected.w,
+                selected.x
+            )
+        );
+
+    selected.y =
+        Math.max(
+            0,
+            Math.min(
+                canvas.height-selected.h,
+                selected.y
+            )
+        );
+
+    draw();
+});
+
+
+canvas.addEventListener("mouseup",()=>{
+
+    if(dragging){
+        saveHistory();
+    }
+
+    dragging=false;
+
+});
+
+
+canvas.addEventListener("mouseleave",()=>{
+
+    dragging=false;
+
+});
+
+
+// ------------------------------
+// DOUBLE CLICK PRICE
+// ------------------------------
+
+canvas.addEventListener("dblclick",e => {
+
+    if(!selected) return;
+
+    const p = position(e);
+
+    const box = findBox(p.x,p.y);
+
+    if(box){
+        editPrice(box);
+    }
+
+});
+
+
+function editPrice(box){
+
+    const price =
+        prompt(
+            "Enter price:",
+            box.price
+        );
+
+    if(price !== null){
+
+        box.price =
+            price.trim() || box.price;
+
+        saveHistory();
+
+        draw();
+    }
+}
+
+
+// ------------------------------
+// FIND BOX
+// ------------------------------
+
+function findBox(x,y){
+
+    for(let i=boxes.length-1;i>=0;i--){
+
+        const b = boxes[i];
+
+        if(
+            x >= b.x &&
+            x <= b.x+b.w &&
+            y >= b.y &&
+            y <= b.y+b.h
+        ){
+
+            return b;
+
+        }
+    }
+
+    return null;
+}
+
+
+// ------------------------------
+// POSITION
+// ------------------------------
+
+function position(e){
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+    return {
+
+        x:
+            (e.clientX-rect.left)/zoom,
+
+        y:
+            (e.clientY-rect.top)/zoom
+
+    };
+}
+
+
+// ------------------------------
+// DELETE
+// ------------------------------
+
+function deleteSelected(){
+
+    if(!selected) return;
+
+    boxes =
+        boxes.filter(
+            b => b !== selected
+        );
+
+    selected=null;
+
+    saveHistory();
+
+    draw();
+}
+
+
+document.addEventListener("keydown",e=>{
+
+    if(
+        (e.key==="Delete" ||
+         e.key==="Backspace") &&
+        selected
+    ){
+
+        e.preventDefault();
+
+        deleteSelected();
+    }
+
+});
+
+
+// ------------------------------
+// PHOTO CONTROLS
+// ------------------------------
+
+document.getElementById("brightness")
+.addEventListener("input",e=>{
+
+    brightness =
+        Number(e.target.value);
+
+    document.getElementById("brightnessText")
+        .textContent =
+        brightness+"%";
+
+    draw();
+
+});
+
+
+document.getElementById("contrast")
+.addEventListener("input",e=>{
+
+    contrast =
+        Number(e.target.value);
+
+    document.getElementById("contrastText")
+        .textContent =
+        contrast+"%";
+
+    draw();
+
+});
+
+
+document.getElementById("saturation")
+.addEventListener("input",e=>{
+
+    saturation =
+        Number(e.target.value);
+
+    document.getElementById("saturationText")
+        .textContent =
+        saturation+"%";
+
+    draw();
+
+});
+
+
+function resetPhoto(){
+
+    brightness=100;
+    contrast=100;
+    saturation=100;
+
+    document.getElementById("brightness").value=100;
+    document.getElementById("contrast").value=100;
+    document.getElementById("saturation").value=100;
+
+    document.getElementById("brightnessText").textContent="100%";
+    document.getElementById("contrastText").textContent="100%";
+    document.getElementById("saturationText").textContent="100%";
+
+    draw();
+}
+
+
+// ------------------------------
+// ZOOM / FIT
+// ------------------------------
+
+function fitImage(){
+
+    if(!image) return;
+
+    const padding=60;
+
+    const availableWidth =
+        area.clientWidth-padding;
+
+    const availableHeight =
+        area.clientHeight-padding;
+
+    zoom=Math.min(
+
+        availableWidth/canvas.width,
+
+        availableHeight/canvas.height
+
+    );
+
+    zoom=Math.max(
+        0.05,
+        Math.min(zoom,1)
+    );
+
+    canvas.style.transform =
+        `scale(${zoom})`;
+
+    canvas.style.left =
+        Math.max(
+            0,
+            (area.clientWidth-canvas.width*zoom)/2
+        )+"px";
+
+    canvas.style.top =
+        Math.max(
+            0,
+            (area.clientHeight-canvas.height*zoom)/2
+        )+"px";
+}
+
+
+// ------------------------------
+// UNDO / REDO
+// ------------------------------
+
+function state(){
+
+    return JSON.stringify({
+
+        boxes,
+
+        brightness,
+
+        contrast,
+
+        saturation
+
+    });
+
+}
+
+
+function saveHistory(){
+
+    const s=state();
+
+    if(
+        history.length &&
+        history[history.length-1]===s
+    ) return;
+
+    history =
+        history.slice(
+            0,
+            historyIndex+1
+        );
+
+    history.push(s);
+
+    historyIndex =
+        history.length-1;
+}
+
+
+function restore(s){
+
+    const data=JSON.parse(s);
+
+    boxes=data.boxes;
+
+    brightness=data.brightness;
+    contrast=data.contrast;
+    saturation=data.saturation;
+
+    selected=null;
+
+    document.getElementById("brightness").value=brightness;
+    document.getElementById("contrast").value=contrast;
+    document.getElementById("saturation").value=saturation;
+
+    document.getElementById("brightnessText").textContent=brightness+"%";
+    document.getElementById("contrastText").textContent=contrast+"%";
+    document.getElementById("saturationText").textContent=saturation+"%";
+
+    draw();
+}
+
+
+function undo(){
+
+    if(historyIndex<=0) return;
+
+    historyIndex--;
+
+    restore(history[historyIndex]);
+}
+
+
+function redo(){
+
+    if(historyIndex>=history.length-1) return;
+
+    historyIndex++;
+
+    restore(history[historyIndex]);
+}
+
+
+// ------------------------------
+// DOWNLOAD
+// ------------------------------
+
+function downloadImage(){
+
+    if(!image){
+
+        alert("Upload an image first.");
+
+        return;
+    }
+
+    const output =
+        document.createElement("canvas");
+
+    output.width=canvas.width;
+    output.height=canvas.height;
+
+    const octx =
+        output.getContext("2d");
+
+    octx.filter =
+        `brightness(${brightness}%)
+         contrast(${contrast}%)
+         saturate(${saturation}%)`;
+
+    octx.drawImage(
+        image,
+        0,
+        0,
+        output.width,
+        output.height
+    );
+
+    octx.filter="none";
+
+    boxes.forEach(box=>{
+
+        octx.fillStyle="#fff";
+
+        octx.fillRect(
+            box.x,
+            box.y,
+            box.w,
+            box.h
+        );
+
+        octx.strokeStyle="#222";
+
+        octx.lineWidth=2;
+
+        octx.strokeRect(
+            box.x,
+            box.y,
+            box.w,
+            box.h
+        );
+
+        octx.fillStyle="#111";
+
+        octx.font =
+            `bold ${Math.max(18,box.h*0.45)}px Arial`;
+
+        octx.textAlign="center";
+        octx.textBaseline="middle";
+
+        octx.fillText(
+            box.price,
+            box.x+box.w/2,
+            box.y+box.h/2
+        );
+
+    });
+
+    const link =
+        document.createElement("a");
+
+    link.download="card-prices.png";
+
+    link.href =
+        output.toDataURL("image/png");
+
+    link.click();
+
+}
+
+
+// ------------------------------
+// DRAG IMAGE UPLOAD
+// ------------------------------
+
+area.addEventListener("dragover",e=>{
+    e.preventDefault();
+});
+
+
+area.addEventListener("drop",e=>{
+
+    e.preventDefault();
+
+    const file=e.dataTransfer.files[0];
+
+    if(!file || !file.type.startsWith("image/"))
+        return;
+
+    const reader=new FileReader();
+
+    reader.onload=e=>{
+
+        const img=new Image();
+
+        img.onload=()=>{
+
+            image=img;
+
+            canvas.width=img.naturalWidth;
+            canvas.height=img.naturalHeight;
+
+            boxes=[];
+            selected=null;
+
+            document.getElementById("empty").style.display="none";
+
+            brightness=100;
+            contrast=100;
+            saturation=100;
+
+            history=[];
+            historyIndex=-1;
+
+            saveHistory();
+
+            fitImage();
+            draw();
+
+        };
+
+        img.src=e.target.result;
+
+    };
+
+    reader.readAsDataURL(file);
+
+});
+
+
+// ------------------------------
+// START
+// ------------------------------
+
+window.addEventListener("resize",()=>{
+
+    if(image) fitImage();
+
+});
+
+</script>
+
+</body>
+</html>
