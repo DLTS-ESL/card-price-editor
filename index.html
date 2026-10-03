@@ -1,953 +1,1879 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Card Price Editor</title>
-
-<style>
-*{box-sizing:border-box}
-
-body{
-    margin:0;
-    font-family:Arial,sans-serif;
-    background:#1e1e1e;
-    color:#fff;
-    overflow:hidden;
+<html lang="en"> 
+    <head> <meta charset="UTF-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Card Price Editor</title> <style> * { box-sizing: border-box; }
+html, body {
+margin: 0;
+width: 100%;
+height: 100%;
+font-family: Arial, Helvetica, sans-serif;
+overflow: hidden;
+background: #202124;
 }
 
-.toolbar{
-    height:60px;
-    background:#292929;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:10px 14px;
-    border-bottom:1px solid #444;
+button {
+font-family: inherit;
 }
 
-.toolbar button{
-    background:#3a3a3a;
-    color:#fff;
-    border:1px solid #555;
-    border-radius:6px;
-    padding:8px 13px;
-    cursor:pointer;
+#topbar {
+height: 58px;
+background: #292a2d;
+border-bottom: 1px solid #444;
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 8px 12px;
+color: white;
 }
 
-.toolbar button:hover{
-    background:#4b4b4b;
+.logo {
+font-weight: 700;
+font-size: 17px;
+margin-right: 15px;
+white-space: nowrap;
 }
 
-.toolbar .download{
-    background:#1677ff;
-    border-color:#1677ff;
+.toolbar-btn {
+background: #3a3b3e;
+color: white;
+border: 1px solid #555;
+border-radius: 6px;
+padding: 8px 13px;
+cursor: pointer;
 }
 
-.title{
-    font-weight:bold;
-    margin-right:15px;
+.toolbar-btn:hover {
+background: #4a4b4f;
 }
 
-.app{
-    height:calc(100vh - 60px);
-    display:flex;
+.download-btn {
+background: #1677ff;
+border-color: #1677ff;
 }
 
-.sidebar{
-    width:240px;
-    background:#292929;
-    padding:20px;
-    border-right:1px solid #444;
+.download-btn:hover {
+background: #0d63d8;
 }
 
-.sidebar h3{
-    margin-top:0;
+#fileInput {
+display: none;
 }
 
-.control{
-    margin:20px 0;
+#app {
+height: calc(100vh - 58px);
+display: flex;
 }
 
-.control label{
-    display:flex;
-    justify-content:space-between;
-    font-size:13px;
-    margin-bottom:7px;
+#sidebar {
+width: 250px;
+min-width: 250px;
+background: #292a2d;
+color: white;
+border-right: 1px solid #444;
+padding: 20px;
+overflow-y: auto;
 }
 
-input[type=range]{
-    width:100%;
+#sidebar h3 {
+margin: 0 0 22px;
+font-size: 16px;
 }
 
-.canvas-area{
-    flex:1;
-    position:relative;
-    overflow:hidden;
-    background-color:#ccc;
-    background-image:
-        linear-gradient(45deg,#bbb 25%,transparent 25%),
-        linear-gradient(-45deg,#bbb 25%,transparent 25%),
-        linear-gradient(45deg,transparent 75%,#bbb 75%),
-        linear-gradient(-45deg,transparent 75%,#bbb 75%);
-    background-size:20px 20px;
-    background-position:0 0,0 10px,10px -10px,-10px 0;
+.control {
+margin-bottom: 22px;
 }
 
-#canvas{
-    position:absolute;
-    transform-origin:top left;
-    cursor:crosshair;
+.control-title {
+display: flex;
+justify-content: space-between;
+font-size: 13px;
+color: #ddd;
+margin-bottom: 8px;
 }
 
-.empty{
-    position:absolute;
-    inset:0;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    color:#555;
-    font-size:18px;
-    pointer-events:none;
+input[type="range"] {
+width: 100%;
 }
 
-.info{
-    color:#aaa;
-    font-size:12px;
-    line-height:1.6;
-    margin-top:25px;
+.help {
+margin-top: 30px;
+color: #aaa;
+font-size: 12px;
+line-height: 1.6;
 }
 
-input[type=file]{
-    display:none;
+.help strong {
+color: #eee;
+}
+
+#workspace {
+position: relative;
+flex: 1;
+overflow: hidden;
+
+background-color: #d1d1d1;
+
+background-image:
+    linear-gradient(45deg, #bdbdbd 25%, transparent 25%),
+    linear-gradient(-45deg, #bdbdbd 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #bdbdbd 75%),
+    linear-gradient(-45deg, transparent 75%, #bdbdbd 75%);
+
+background-size: 24px 24px;
+
+background-position:
+    0 0,
+    0 12px,
+    12px -12px,
+    -12px 0;
+
+}
+
+#canvas {
+position: absolute;
+transform-origin: top left;
+cursor: crosshair;
+}
+
+#emptyMessage {
+position: absolute;
+inset: 0;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #555;
+font-size: 18px;
+pointer-events: none;
+}
+
+#zoomControls {
+position: absolute;
+right: 18px;
+bottom: 18px;
+display: flex;
+align-items: center;
+gap: 4px;
+background: rgba(40,40,40,.9);
+padding: 6px;
+border-radius: 8px;
+color: white;
+}
+
+.zoom-btn {
+width: 34px;
+height: 30px;
+background: #444;
+color: white;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+}
+
+#zoomLabel {
+min-width: 55px;
+text-align: center;
+font-size: 12px;
 }
 </style>
-</head>
 
-<body>
-
-<div class="toolbar">
-
-    <div class="title">Card Price Editor</div>
-
-    <button onclick="upload.click()">Upload Image</button>
-    <button onclick="undo()">Undo</button>
-    <button onclick="redo()">Redo</button>
-    <button onclick="deleteSelected()">Delete</button>
-    <button onclick="resetPhoto()">Reset</button>
-
-    <button class="download" onclick="downloadImage()">
-        Download
-    </button>
-
-    <input id="upload" type="file" accept="image/*">
-
+</head> <body> <div id="topbar">
+<div class="logo">
+    Card Price Editor
 </div>
 
-<div class="app">
+<button class="toolbar-btn" id="uploadButton">
+    Upload Image
+</button>
 
-    <div class="sidebar">
+<button class="toolbar-btn" id="undoButton">
+    Undo
+</button>
 
-        <h3>Photo</h3>
+<button class="toolbar-btn" id="redoButton">
+    Redo
+</button>
 
-        <div class="control">
-            <label>
-                <span>Brightness</span>
-                <span id="brightnessText">100%</span>
-            </label>
+<button class="toolbar-btn" id="deleteButton">
+    Delete
+</button>
 
-            <input
-                id="brightness"
-                type="range"
-                min="50"
-                max="150"
-                value="100"
-            >
+<button class="toolbar-btn" id="resetButton">
+    Reset Photo
+</button>
+
+<button class="toolbar-btn download-btn" id="downloadButton">
+    Download PNG
+</button>
+
+<input
+    type="file"
+    id="fileInput"
+    accept="image/*"
+>
+
+</div> <div id="app">
+<aside id="sidebar">
+
+    <h3>Photo Adjustments</h3>
+
+    <div class="control">
+
+        <div class="control-title">
+            <span>Brightness</span>
+            <span id="brightnessValue">100%</span>
         </div>
 
-        <div class="control">
-            <label>
-                <span>Contrast</span>
-                <span id="contrastText">100%</span>
-            </label>
-
-            <input
-                id="contrast"
-                type="range"
-                min="50"
-                max="150"
-                value="100"
-            >
-        </div>
-
-        <div class="control">
-            <label>
-                <span>Saturation</span>
-                <span id="saturationText">100%</span>
-            </label>
-
-            <input
-                id="saturation"
-                type="range"
-                min="0"
-                max="200"
-                value="100"
-            >
-        </div>
-
-        <div class="info">
-            <b>How to use</b><br><br>
-            Upload your photo.<br>
-            Click anywhere on the image to add a price box.<br><br>
-            Drag a box to move it.<br><br>
-            Double-click a box to change the price.<br><br>
-            Select a box and press Delete or Backspace to remove it.<br><br>
-            Download when finished.
-        </div>
+        <input
+            type="range"
+            id="brightness"
+            min="50"
+            max="150"
+            value="100"
+        >
 
     </div>
 
-    <div class="canvas-area" id="area">
+    <div class="control">
 
-        <div class="empty" id="empty">
-            Upload an image to begin
+        <div class="control-title">
+            <span>Contrast</span>
+            <span id="contrastValue">100%</span>
         </div>
 
-        <canvas id="canvas"></canvas>
+        <input
+            type="range"
+            id="contrast"
+            min="50"
+            max="150"
+            value="100"
+        >
 
     </div>
 
-</div>
+    <div class="control">
 
-<script>
+        <div class="control-title">
+            <span>Saturation</span>
+            <span id="saturationValue">100%</span>
+        </div>
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+        <input
+            type="range"
+            id="saturation"
+            min="0"
+            max="200"
+            value="100"
+        >
 
-const area = document.getElementById("area");
-const upload = document.getElementById("upload");
+    </div>
+
+    <div class="help">
+
+        <strong>How it works</strong>
+
+        <br><br>
+
+        Click anywhere on your photo.
+
+        <br>
+        A white box with <strong>100</strong>
+        appears immediately.
+
+        <br><br>
+
+        Drag the box to move it.
+
+        <br><br>
+
+        Drag the blue corner to resize it.
+        The number automatically gets
+        bigger or smaller with the box.
+
+        <br><br>
+
+        Double-click a price to edit it.
+
+        <br><br>
+
+        Select a box and press
+        <strong>Delete</strong> or
+        <strong>Backspace</strong> to remove it.
+
+        <br><br>
+
+        When finished, click
+        <strong>Download PNG</strong>.
+
+    </div>
+
+</aside>
+
+<main id="workspace">
+
+    <div id="emptyMessage">
+        Upload an image to start
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="zoomControls">
+
+        <button class="zoom-btn" id="zoomOut">
+            −
+        </button>
+
+        <span id="zoomLabel">
+            100%
+        </span>
+
+        <button class="zoom-btn" id="zoomIn">
+            +
+        </button>
+
+        <button class="zoom-btn" id="fitButton">
+            Fit
+        </button>
+
+    </div>
+
+</main>
+
+</div> <script>
+/* =========================================================
+BASIC SETUP
+========================================================= */
+
+const canvas =
+document.getElementById("canvas");
+
+const ctx =
+canvas.getContext("2d");
+
+const workspace =
+document.getElementById("workspace");
+
+const fileInput =
+document.getElementById("fileInput");
+
+const emptyMessage =
+document.getElementById("emptyMessage");
 
 let image = null;
 
+/*
+Price boxes.
+
+Each box contains:
+
+x       = horizontal position
+y       = vertical position
+width   = box width
+height  = box height
+price   = displayed number
+
+*/
+
 let boxes = [];
-let selected = null;
+
+let selectedBox = null;
+
+/* Photo settings */
 
 let brightness = 100;
 let contrast = 100;
 let saturation = 100;
 
+/* Zoom */
+
 let zoom = 1;
 
-let dragging = false;
-let offsetX = 0;
-let offsetY = 0;
+/* Moving */
+
+let isDragging = false;
+
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+/* Resizing */
+
+let isResizing = false;
+
+let resizeStartX = 0;
+let resizeStartY = 0;
+
+let resizeStartWidth = 0;
+let resizeStartHeight = 0;
+
+/* Undo / redo */
 
 let history = [];
-let historyIndex = -1;
 
+let historyPosition = -1;
 
-// ------------------------------
-// UPLOAD
-// ------------------------------
+/* =========================================================
+UPLOAD
+========================================================= */
 
-upload.addEventListener("change", e => {
+document
+.getElementById("uploadButton")
+.addEventListener("click", function() {
 
-    const file = e.target.files[0];
+fileInput.click();
 
-    if(!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = e => {
-
-        const img = new Image();
-
-        img.onload = () => {
-
-            image = img;
-
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-
-            boxes = [];
-            selected = null;
-
-            brightness = 100;
-            contrast = 100;
-            saturation = 100;
-
-            document.getElementById("brightness").value = 100;
-            document.getElementById("contrast").value = 100;
-            document.getElementById("saturation").value = 100;
-
-            document.getElementById("empty").style.display = "none";
-
-            history = [];
-            historyIndex = -1;
-
-            saveHistory();
-
-            fitImage();
-
-            draw();
-        };
-
-        img.src = e.target.result;
-    };
-
-    reader.readAsDataURL(file);
 });
 
+fileInput.addEventListener("change", function(event) {
 
-// ------------------------------
-// DRAW
-// ------------------------------
+const file =
+    event.target.files[0];
 
-function draw(){
+if (!file) return;
 
-    if(!image) return;
+loadImageFile(file);
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+});
 
-    ctx.filter =
-        `brightness(${brightness}%)
-         contrast(${contrast}%)
-         saturate(${saturation}%)`;
+function loadImageFile(file) {
 
-    ctx.drawImage(
-        image,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-    );
-
-    ctx.filter = "none";
-
-    boxes.forEach(box => {
-
-        ctx.fillStyle = "#fff";
-
-        ctx.fillRect(
-            box.x,
-            box.y,
-            box.w,
-            box.h
-        );
-
-        ctx.lineWidth =
-            selected === box ? 4 : 2;
-
-        ctx.strokeStyle =
-            selected === box ? "#1677ff" : "#222";
-
-        ctx.strokeRect(
-            box.x,
-            box.y,
-            box.w,
-            box.h
-        );
-
-        ctx.fillStyle = "#111";
-
-        ctx.font =
-            `bold ${Math.max(18,box.h*0.70)}px Arial`;
-
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-
-        ctx.fillText(
-            box.price,
-            box.x + box.w/2,
-            box.y + box.h/2
-        );
-
-    });
+if (
+    !file ||
+    !file.type.startsWith("image/")
+) {
+    return;
 }
 
+const reader =
+    new FileReader();
 
-// ------------------------------
-// CLICK
-// ------------------------------
+reader.onload = function(event) {
 
-canvas.addEventListener("mousedown", e => {
+    const img =
+        new Image();
 
-    if(!image) return;
+    img.onload = function() {
 
-    const p = position(e);
+        image = img;
 
-    const box = findBox(p.x,p.y);
+        canvas.width =
+            img.naturalWidth;
 
-    if(box){
+        canvas.height =
+            img.naturalHeight;
 
-        selected = box;
+        boxes = [];
 
-        dragging = true;
+        selectedBox = null;
 
-        offsetX = p.x - box.x;
-        offsetY = p.y - box.y;
+        brightness = 100;
+        contrast = 100;
+        saturation = 100;
+
+        document.getElementById(
+            "brightness"
+        ).value = 100;
+
+        document.getElementById(
+            "contrast"
+        ).value = 100;
+
+        document.getElementById(
+            "saturation"
+        ).value = 100;
+
+        updateAdjustmentLabels();
+
+        emptyMessage.style.display =
+            "none";
+
+        history = [];
+
+        historyPosition = -1;
+
+        saveHistory();
+
+        fitImage();
+
+        draw();
+
+    };
+
+    img.src =
+        event.target.result;
+
+};
+
+reader.readAsDataURL(file);
+
+}
+
+/* =========================================================
+DRAG AND DROP IMAGE
+========================================================= */
+
+workspace.addEventListener(
+"dragover",
+function(event) {
+
+    event.preventDefault();
+
+}
+
+);
+
+workspace.addEventListener(
+"drop",
+function(event) {
+
+    event.preventDefault();
+
+    const file =
+        event.dataTransfer.files[0];
+
+    loadImageFile(file);
+
+}
+
+);
+
+/* =========================================================
+DRAW
+========================================================= */
+
+function draw() {
+
+if (!image) return;
+
+ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+);
+
+/*
+    Apply image adjustments.
+*/
+
+ctx.filter =
+    "brightness(" +
+    brightness +
+    "%) contrast(" +
+    contrast +
+    "%) saturate(" +
+    saturation +
+    "%)";
+
+ctx.drawImage(
+    image,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+);
+
+ctx.filter = "none";
+
+/*
+    Draw all price boxes.
+*/
+
+for (
+    let i = 0;
+    i < boxes.length;
+    i++
+) {
+
+    drawPriceBox(
+        boxes[i]
+    );
+
+}
+
+}
+
+/* =========================================================
+DRAW PRICE BOX
+========================================================= */
+
+function drawPriceBox(box) {
+
+/*
+    White box.
+*/
+
+ctx.fillStyle =
+    "#ffffff";
+
+ctx.fillRect(
+    box.x,
+    box.y,
+    box.width,
+    box.height
+);
+
+/*
+    Border.
+*/
+
+if (
+    selectedBox === box
+) {
+
+    ctx.strokeStyle =
+        "#1677ff";
+
+    ctx.lineWidth = 5;
+
+} else {
+
+    ctx.strokeStyle =
+        "#222";
+
+    ctx.lineWidth = 2;
+
+}
+
+ctx.strokeRect(
+    box.x,
+    box.y,
+    box.width,
+    box.height
+);
+
+/*
+    FONT SIZE
+
+    This is the important part.
+
+    As the box gets bigger,
+    the font gets bigger.
+
+    The minimum font size is 40px.
+
+    0.68 means the font is
+    roughly 68% of the box height.
+*/
+
+const fontSize =
+    Math.max(
+        40,
+        box.height * 0.68
+    );
+
+ctx.fillStyle =
+    "#111";
+
+ctx.font =
+    "bold " +
+    fontSize +
+    "px Arial";
+
+ctx.textAlign =
+    "center";
+
+ctx.textBaseline =
+    "middle";
+
+ctx.fillText(
+    box.price,
+    box.x +
+        box.width / 2,
+    box.y +
+        box.height / 2
+);
+
+/*
+    Resize handle.
+
+    Only show it on the
+    selected box.
+*/
+
+if (
+    selectedBox === box
+) {
+
+    const handleSize = 18;
+
+    ctx.fillStyle =
+        "#1677ff";
+
+    ctx.fillRect(
+
+        box.x +
+            box.width -
+            handleSize / 2,
+
+        box.y +
+            box.height -
+            handleSize / 2,
+
+        handleSize,
+
+        handleSize
+    );
+}
+
+}
+
+/* =========================================================
+MOUSE DOWN
+========================================================= */
+
+canvas.addEventListener(
+"mousedown",
+function(event) {
+
+    if (!image) return;
+
+    const point =
+        getCanvasPosition(event);
+
+    /*
+        First check resize handle.
+    */
+
+    if (
+        selectedBox &&
+        pointIsOnResizeHandle(
+            selectedBox,
+            point.x,
+            point.y
+        )
+    ) {
+
+        isResizing = true;
+
+        resizeStartX =
+            point.x;
+
+        resizeStartY =
+            point.y;
+
+        resizeStartWidth =
+            selectedBox.width;
+
+        resizeStartHeight =
+            selectedBox.height;
+
+        return;
+    }
+
+    /*
+        Check if an existing
+        box was clicked.
+    */
+
+    const clickedBox =
+        findBox(
+            point.x,
+            point.y
+        );
+
+    if (clickedBox) {
+
+        selectedBox =
+            clickedBox;
+
+        isDragging = true;
+
+        dragOffsetX =
+            point.x -
+            clickedBox.x;
+
+        dragOffsetY =
+            point.y -
+            clickedBox.y;
 
         draw();
 
         return;
     }
 
-    // Create new box
+    /*
+        NOTHING was clicked.
+
+        Create a new box.
+
+        DEFAULT PRICE = 100
+    */
 
     const newBox = {
 
-        x:p.x-60,
-        y:p.y-25,
+        x:
+            point.x - 100,
 
-        w:120,
-        h:50,
+        y:
+            point.y - 50,
 
-        price:"500"
+        width:
+            200,
+
+        height:
+            100,
+
+        price:
+            "100"
 
     };
 
-    boxes.push(newBox);
+    /*
+        Keep new box
+        inside image.
+    */
 
-    selected = newBox;
+    newBox.x =
+        Math.max(
+            0,
+            Math.min(
+                canvas.width -
+                    newBox.width,
+                newBox.x
+            )
+        );
+
+    newBox.y =
+        Math.max(
+            0,
+            Math.min(
+                canvas.height -
+                    newBox.height,
+                newBox.y
+            )
+        );
+
+    boxes.push(
+        newBox
+    );
+
+    selectedBox =
+        newBox;
 
     saveHistory();
 
     draw();
 
-    editPrice(newBox);
-});
+}
 
+);
 
-canvas.addEventListener("mousemove",e => {
+/* =========================================================
+MOUSE MOVE
+========================================================= */
 
-    if(!dragging || !selected) return;
+canvas.addEventListener(
+"mousemove",
+function(event) {
 
-    const p = position(e);
+    if (
+        !isDragging &&
+        !isResizing
+    ) {
+        return;
+    }
 
-    selected.x = p.x - offsetX;
-    selected.y = p.y - offsetY;
+    if (!selectedBox) {
+        return;
+    }
 
-    selected.x =
-        Math.max(
-            0,
+    const point =
+        getCanvasPosition(event);
+
+    /*
+        RESIZE
+    */
+
+    if (isResizing) {
+
+        let deltaX =
+            point.x -
+            resizeStartX;
+
+        let deltaY =
+            point.y -
+            resizeStartY;
+
+        /*
+            Resize proportionally.
+
+            This means the box
+            keeps roughly the same
+            shape while getting bigger.
+        */
+
+        let delta =
+            Math.max(
+                deltaX,
+                deltaY
+            );
+
+        let newWidth =
+            resizeStartWidth +
+            delta;
+
+        let newHeight =
+            resizeStartHeight +
+            delta * 0.5;
+
+        /*
+            Minimum size.
+        */
+
+        newWidth =
+            Math.max(
+                70,
+                newWidth
+            );
+
+        newHeight =
+            Math.max(
+                45,
+                newHeight
+            );
+
+        /*
+            Don't allow it
+            outside the photo.
+        */
+
+        newWidth =
             Math.min(
-                canvas.width-selected.w,
-                selected.x
-            )
-        );
+                newWidth,
+                canvas.width -
+                    selectedBox.x
+            );
 
-    selected.y =
-        Math.max(
-            0,
+        newHeight =
             Math.min(
-                canvas.height-selected.h,
-                selected.y
-            )
-        );
+                newHeight,
+                canvas.height -
+                    selectedBox.y
+            );
 
-    draw();
-});
+        selectedBox.width =
+            newWidth;
 
+        selectedBox.height =
+            newHeight;
 
-canvas.addEventListener("mouseup",()=>{
+        draw();
 
-    if(dragging){
+        return;
+    }
+
+    /*
+        MOVE
+    */
+
+    if (isDragging) {
+
+        selectedBox.x =
+            point.x -
+            dragOffsetX;
+
+        selectedBox.y =
+            point.y -
+            dragOffsetY;
+
+        /*
+            Keep inside photo.
+        */
+
+        selectedBox.x =
+            Math.max(
+                0,
+                Math.min(
+                    canvas.width -
+                        selectedBox.width,
+                    selectedBox.x
+                )
+            );
+
+        selectedBox.y =
+            Math.max(
+                0,
+                Math.min(
+                    canvas.height -
+                        selectedBox.height,
+                    selectedBox.y
+                )
+            );
+
+        draw();
+    }
+
+}
+
+);
+
+/* =========================================================
+MOUSE UP
+========================================================= */
+
+canvas.addEventListener(
+"mouseup",
+function() {
+
+    if (
+        isDragging ||
+        isResizing
+    ) {
+
         saveHistory();
+
     }
 
-    dragging=false;
+    isDragging = false;
 
-});
+    isResizing = false;
 
+}
 
-canvas.addEventListener("mouseleave",()=>{
+);
 
-    dragging=false;
+canvas.addEventListener(
+"mouseleave",
+function() {
 
-});
+    isDragging = false;
 
+    isResizing = false;
 
-// ------------------------------
-// DOUBLE CLICK PRICE
-// ------------------------------
+}
 
-canvas.addEventListener("dblclick",e => {
+);
 
-    if(!selected) return;
+/* =========================================================
+DOUBLE CLICK PRICE
+========================================================= */
 
-    const p = position(e);
+canvas.addEventListener(
+"dblclick",
+function(event) {
 
-    const box = findBox(p.x,p.y);
+    if (!image) return;
 
-    if(box){
-        editPrice(box);
-    }
+    const point =
+        getCanvasPosition(event);
 
-});
+    const box =
+        findBox(
+            point.x,
+            point.y
+        );
 
+    if (!box) return;
 
-function editPrice(box){
-
-    const price =
+    const newPrice =
         prompt(
             "Enter price:",
             box.price
         );
 
-    if(price !== null){
+    if (
+        newPrice !== null
+    ) {
 
-        box.price =
-            price.trim() || box.price;
+        const cleaned =
+            newPrice.trim();
 
-        saveHistory();
+        if (cleaned !== "") {
 
-        draw();
-    }
-}
+            box.price =
+                cleaned;
 
+            saveHistory();
 
-// ------------------------------
-// FIND BOX
-// ------------------------------
-
-function findBox(x,y){
-
-    for(let i=boxes.length-1;i>=0;i--){
-
-        const b = boxes[i];
-
-        if(
-            x >= b.x &&
-            x <= b.x+b.w &&
-            y >= b.y &&
-            y <= b.y+b.h
-        ){
-
-            return b;
+            draw();
 
         }
     }
 
-    return null;
 }
 
+);
 
-// ------------------------------
-// POSITION
-// ------------------------------
+/* =========================================================
+FIND BOX
+========================================================= */
 
-function position(e){
+function findBox(x, y) {
 
-    const rect =
-        canvas.getBoundingClientRect();
+/*
+    Start at the last box.
 
-    return {
+    This means the newest box
+    is selected first if boxes overlap.
+*/
 
-        x:
-            (e.clientX-rect.left)/zoom,
+for (
+    let i =
+        boxes.length - 1;
 
-        y:
-            (e.clientY-rect.top)/zoom
+    i >= 0;
 
-    };
+    i--
+) {
+
+    const box =
+        boxes[i];
+
+    if (
+        x >= box.x &&
+        x <=
+            box.x +
+            box.width &&
+
+        y >= box.y &&
+        y <=
+            box.y +
+            box.height
+    ) {
+
+        return box;
+
+    }
 }
 
+return null;
 
-// ------------------------------
-// DELETE
-// ------------------------------
-
-function deleteSelected(){
-
-    if(!selected) return;
-
-    boxes =
-        boxes.filter(
-            b => b !== selected
-        );
-
-    selected=null;
-
-    saveHistory();
-
-    draw();
 }
 
+/* =========================================================
+RESIZE HANDLE
+========================================================= */
 
-document.addEventListener("keydown",e=>{
+function pointIsOnResizeHandle(
+box,
+x,
+y
+) {
 
-    if(
-        (e.key==="Delete" ||
-         e.key==="Backspace") &&
-        selected
-    ){
+const handleSize = 28;
 
-        e.preventDefault();
+const handleX =
+    box.x +
+    box.width;
+
+const handleY =
+    box.y +
+    box.height;
+
+return (
+
+    x >=
+        handleX -
+        handleSize &&
+
+    x <=
+        handleX +
+        handleSize &&
+
+    y >=
+        handleY -
+        handleSize &&
+
+    y <=
+        handleY +
+        handleSize
+
+);
+
+}
+
+/* =========================================================
+GET IMAGE COORDINATES
+========================================================= */
+
+function getCanvasPosition(event) {
+
+const rect =
+    canvas.getBoundingClientRect();
+
+return {
+
+    x:
+        (
+            event.clientX -
+            rect.left
+        ) / zoom,
+
+    y:
+        (
+            event.clientY -
+            rect.top
+        ) / zoom
+
+};
+
+}
+
+/* =========================================================
+DELETE
+========================================================= */
+
+function deleteSelected() {
+
+if (!selectedBox) {
+    return;
+}
+
+boxes =
+    boxes.filter(
+        function(box) {
+
+            return box !==
+                selectedBox;
+
+        }
+    );
+
+selectedBox =
+    null;
+
+saveHistory();
+
+draw();
+
+}
+
+/* =========================================================
+DELETE / BACKSPACE KEY
+========================================================= */
+
+document.addEventListener(
+"keydown",
+function(event) {
+
+    if (
+        (
+            event.key ===
+                "Delete" ||
+
+            event.key ===
+                "Backspace"
+        ) &&
+        selectedBox
+    ) {
+
+        event.preventDefault();
 
         deleteSelected();
+
     }
 
-});
+}
 
+);
 
-// ------------------------------
-// PHOTO CONTROLS
-// ------------------------------
+/* =========================================================
+BRIGHTNESS
+========================================================= */
 
-document.getElementById("brightness")
-.addEventListener("input",e=>{
+document
+.getElementById("brightness")
+.addEventListener(
+"input",
+function(event) {
 
     brightness =
-        Number(e.target.value);
+        Number(
+            event.target.value
+        );
 
-    document.getElementById("brightnessText")
-        .textContent =
-        brightness+"%";
+    updateAdjustmentLabels();
 
     draw();
 
-});
+}
 
+);
 
-document.getElementById("contrast")
-.addEventListener("input",e=>{
+/* =========================================================
+CONTRAST
+========================================================= */
+
+document
+.getElementById("contrast")
+.addEventListener(
+"input",
+function(event) {
 
     contrast =
-        Number(e.target.value);
+        Number(
+            event.target.value
+        );
 
-    document.getElementById("contrastText")
-        .textContent =
-        contrast+"%";
+    updateAdjustmentLabels();
 
     draw();
 
-});
+}
 
+);
 
-document.getElementById("saturation")
-.addEventListener("input",e=>{
+/* =========================================================
+SATURATION
+========================================================= */
+
+document
+.getElementById("saturation")
+.addEventListener(
+"input",
+function(event) {
 
     saturation =
-        Number(e.target.value);
+        Number(
+            event.target.value
+        );
 
-    document.getElementById("saturationText")
-        .textContent =
-        saturation+"%";
-
-    draw();
-
-});
-
-
-function resetPhoto(){
-
-    brightness=100;
-    contrast=100;
-    saturation=100;
-
-    document.getElementById("brightness").value=100;
-    document.getElementById("contrast").value=100;
-    document.getElementById("saturation").value=100;
-
-    document.getElementById("brightnessText").textContent="100%";
-    document.getElementById("contrastText").textContent="100%";
-    document.getElementById("saturationText").textContent="100%";
+    updateAdjustmentLabels();
 
     draw();
+
 }
 
+);
 
-// ------------------------------
-// ZOOM / FIT
-// ------------------------------
+/* =========================================================
+ADJUSTMENT LABELS
+========================================================= */
 
-function fitImage(){
+function updateAdjustmentLabels() {
 
-    if(!image) return;
+document.getElementById(
+    "brightnessValue"
+).textContent =
+    brightness + "%";
 
-    const padding=60;
+document.getElementById(
+    "contrastValue"
+).textContent =
+    contrast + "%";
 
-    const availableWidth =
-        area.clientWidth-padding;
+document.getElementById(
+    "saturationValue"
+).textContent =
+    saturation + "%";
 
-    const availableHeight =
-        area.clientHeight-padding;
+}
 
-    zoom=Math.min(
+/* =========================================================
+RESET PHOTO
+========================================================= */
 
-        availableWidth/canvas.width,
+document
+.getElementById("resetButton")
+.addEventListener(
+"click",
+function() {
 
-        availableHeight/canvas.height
+    brightness = 100;
+    contrast = 100;
+    saturation = 100;
+
+    document.getElementById(
+        "brightness"
+    ).value = 100;
+
+    document.getElementById(
+        "contrast"
+    ).value = 100;
+
+    document.getElementById(
+        "saturation"
+    ).value = 100;
+
+    updateAdjustmentLabels();
+
+    draw();
+
+}
+
+);
+
+/* =========================================================
+FIT IMAGE
+========================================================= */
+
+function fitImage() {
+
+if (!image) return;
+
+const padding = 50;
+
+const availableWidth =
+    workspace.clientWidth -
+    padding;
+
+const availableHeight =
+    workspace.clientHeight -
+    padding;
+
+zoom =
+    Math.min(
+
+        availableWidth /
+            canvas.width,
+
+        availableHeight /
+            canvas.height
 
     );
 
-    zoom=Math.max(
+zoom =
+    Math.max(
         0.05,
-        Math.min(zoom,1)
+        Math.min(
+            zoom,
+            1
+        )
     );
 
-    canvas.style.transform =
-        `scale(${zoom})`;
+applyZoom();
 
-    canvas.style.left =
-        Math.max(
-            0,
-            (area.clientWidth-canvas.width*zoom)/2
-        )+"px";
+canvas.style.left =
+    Math.max(
+        0,
+        (
+            workspace.clientWidth -
+            canvas.width * zoom
+        ) / 2
+    ) + "px";
 
-    canvas.style.top =
-        Math.max(
-            0,
-            (area.clientHeight-canvas.height*zoom)/2
-        )+"px";
+canvas.style.top =
+    Math.max(
+        0,
+        (
+            workspace.clientHeight -
+            canvas.height * zoom
+        ) / 2
+    ) + "px";
+
 }
 
+/* =========================================================
+ZOOM
+========================================================= */
 
-// ------------------------------
-// UNDO / REDO
-// ------------------------------
+function applyZoom() {
 
-function state(){
+canvas.style.transform =
+    "scale(" +
+    zoom +
+    ")";
 
-    return JSON.stringify({
+document.getElementById(
+    "zoomLabel"
+).textContent =
+    Math.round(
+        zoom * 100
+    ) + "%";
 
+}
+
+document
+.getElementById("zoomIn")
+.addEventListener(
+"click",
+function() {
+
+    zoom += 0.1;
+
+    zoom =
+        Math.min(
+            zoom,
+            4
+        );
+
+    applyZoom();
+
+}
+
+);
+
+document
+.getElementById("zoomOut")
+.addEventListener(
+"click",
+function() {
+
+    zoom -= 0.1;
+
+    zoom =
+        Math.max(
+            zoom,
+            0.1
+        );
+
+    applyZoom();
+
+}
+
+);
+
+document
+.getElementById("fitButton")
+.addEventListener(
+"click",
+function() {
+
+    fitImage();
+
+}
+
+);
+
+/* =========================================================
+HISTORY
+========================================================= */
+
+function getState() {
+
+return JSON.stringify({
+
+    boxes:
         boxes,
 
+    brightness:
         brightness,
 
+    contrast:
         contrast,
 
+    saturation:
         saturation
 
-    });
+});
 
 }
 
+function saveHistory() {
 
-function saveHistory(){
+const currentState =
+    getState();
 
-    const s=state();
+/*
+    Don't save duplicates.
+*/
 
-    if(
-        history.length &&
-        history[history.length-1]===s
-    ) return;
+if (
+    history.length > 0 &&
+    history[
+        history.length - 1
+    ] === currentState
+) {
 
-    history =
-        history.slice(
-            0,
-            historyIndex+1
-        );
+    return;
 
-    history.push(s);
-
-    historyIndex =
-        history.length-1;
 }
 
+/*
+    Remove redo states.
+*/
 
-function restore(s){
-
-    const data=JSON.parse(s);
-
-    boxes=data.boxes;
-
-    brightness=data.brightness;
-    contrast=data.contrast;
-    saturation=data.saturation;
-
-    selected=null;
-
-    document.getElementById("brightness").value=brightness;
-    document.getElementById("contrast").value=contrast;
-    document.getElementById("saturation").value=saturation;
-
-    document.getElementById("brightnessText").textContent=brightness+"%";
-    document.getElementById("contrastText").textContent=contrast+"%";
-    document.getElementById("saturationText").textContent=saturation+"%";
-
-    draw();
-}
-
-
-function undo(){
-
-    if(historyIndex<=0) return;
-
-    historyIndex--;
-
-    restore(history[historyIndex]);
-}
-
-
-function redo(){
-
-    if(historyIndex>=history.length-1) return;
-
-    historyIndex++;
-
-    restore(history[historyIndex]);
-}
-
-
-// ------------------------------
-// DOWNLOAD
-// ------------------------------
-
-function downloadImage(){
-
-    if(!image){
-
-        alert("Upload an image first.");
-
-        return;
-    }
-
-    const output =
-        document.createElement("canvas");
-
-    output.width=canvas.width;
-    output.height=canvas.height;
-
-    const octx =
-        output.getContext("2d");
-
-    octx.filter =
-        `brightness(${brightness}%)
-         contrast(${contrast}%)
-         saturate(${saturation}%)`;
-
-    octx.drawImage(
-        image,
+history =
+    history.slice(
         0,
-        0,
-        output.width,
-        output.height
+        historyPosition + 1
     );
 
-    octx.filter="none";
+history.push(
+    currentState
+);
 
-    boxes.forEach(box=>{
-
-        octx.fillStyle="#fff";
-
-        octx.fillRect(
-            box.x,
-            box.y,
-            box.w,
-            box.h
-        );
-
-        octx.strokeStyle="#222";
-
-        octx.lineWidth=2;
-
-        octx.strokeRect(
-            box.x,
-            box.y,
-            box.w,
-            box.h
-        );
-
-        octx.fillStyle="#111";
-
-        octx.font =
-            `bold ${Math.max(18,box.h*0.45)}px Arial`;
-
-        octx.textAlign="center";
-        octx.textBaseline="middle";
-
-        octx.fillText(
-            box.price,
-            box.x+box.w/2,
-            box.y+box.h/2
-        );
-
-    });
-
-    const link =
-        document.createElement("a");
-
-    link.download="card-prices.png";
-
-    link.href =
-        output.toDataURL("image/png");
-
-    link.click();
+historyPosition =
+    history.length - 1;
 
 }
 
+function restoreState(state) {
 
-// ------------------------------
-// DRAG IMAGE UPLOAD
-// ------------------------------
+const data =
+    JSON.parse(state);
 
-area.addEventListener("dragover",e=>{
-    e.preventDefault();
-});
+boxes =
+    data.boxes || [];
 
+brightness =
+    data.brightness;
 
-area.addEventListener("drop",e=>{
+contrast =
+    data.contrast;
 
-    e.preventDefault();
+saturation =
+    data.saturation;
 
-    const file=e.dataTransfer.files[0];
+selectedBox =
+    null;
 
-    if(!file || !file.type.startsWith("image/"))
-        return;
+document.getElementById(
+    "brightness"
+).value =
+    brightness;
 
-    const reader=new FileReader();
+document.getElementById(
+    "contrast"
+).value =
+    contrast;
 
-    reader.onload=e=>{
+document.getElementById(
+    "saturation"
+).value =
+    saturation;
 
-        const img=new Image();
+updateAdjustmentLabels();
 
-        img.onload=()=>{
+draw();
 
-            image=img;
+}
 
-            canvas.width=img.naturalWidth;
-            canvas.height=img.naturalHeight;
+function undo() {
 
-            boxes=[];
-            selected=null;
+if (
+    historyPosition <= 0
+) {
 
-            document.getElementById("empty").style.display="none";
+    return;
+}
 
-            brightness=100;
-            contrast=100;
-            saturation=100;
+historyPosition--;
 
-            history=[];
-            historyIndex=-1;
+restoreState(
+    history[
+        historyPosition
+    ]
+);
 
-            saveHistory();
+}
 
-            fitImage();
-            draw();
+function redo() {
 
-        };
+if (
+    historyPosition >=
+    history.length - 1
+) {
 
-        img.src=e.target.result;
+    return;
+}
 
-    };
+historyPosition++;
 
-    reader.readAsDataURL(file);
+restoreState(
+    history[
+        historyPosition
+    ]
+);
 
-});
+}
 
+document
+.getElementById("undoButton")
+.addEventListener(
+"click",
+undo
+);
 
-// ------------------------------
-// START
-// ------------------------------
+document
+.getElementById("redoButton")
+.addEventListener(
+"click",
+redo
+);
 
-window.addEventListener("resize",()=>{
+document
+.getElementById("deleteButton")
+.addEventListener(
+"click",
+deleteSelected
+);
 
-    if(image) fitImage();
+/* =========================================================
+DOWNLOAD FINAL IMAGE
+========================================================= */
 
-});
+document
+.getElementById("downloadButton")
+.addEventListener(
+"click",
+downloadImage
+);
+
+function downloadImage() {
+
+if (!image) {
+
+    alert(
+        "Please upload an image first."
+    );
+
+    return;
+}
+
+/*
+    Create a separate canvas
+    at the original image size.
+
+    This makes sure the downloaded
+    image is full resolution.
+*/
+
+const outputCanvas =
+    document.createElement(
+        "canvas"
+    );
+
+outputCanvas.width =
+    canvas.width;
+
+outputCanvas.height =
+    canvas.height;
+
+const outputContext =
+    outputCanvas.getContext(
+        "2d"
+    );
+
+/*
+    Photo adjustments
+*/
+
+outputContext.filter =
+    "brightness(" +
+    brightness +
+    "%) contrast(" +
+    contrast +
+    "%) saturate(" +
+    saturation +
+    "%)";
+
+outputContext.drawImage(
+    image,
+    0,
+    0,
+    outputCanvas.width,
+    outputCanvas.height
+);
+
+outputContext.filter =
+    "none";
+
+/*
+    Draw price boxes
+*/
+
+boxes.forEach(
+    function(box) {
+
+        /*
+            White box
+        */
+
+        outputContext.fillStyle =
+            "#ffffff";
+
+        outputContext.fillRect(
+            box.x,
+            box.y,
+            box.width,
+            box.height
+        );
+
+        /*
+            Black border
+        */
+
+        outputContext.strokeStyle =
+            "#222";
+
+        outputContext.lineWidth =
+            2;
+
+        outputContext.strokeRect(
+            box.x,
+            box.y,
+            box.width,
+            box.height
+        );
+
+        /*
+            Dynamic font.
+
+            IMPORTANT:
+            This is the same calculation
+            used while editing.
+        */
+
+        const fontSize =
+            Math.max(
+                40,
+                box.height * 0.68
+            );
+
+        outputContext.fillStyle =
+            "#111";
+
+        outputContext.font =
+            "bold " +
+            fontSize +
+            "px Arial";
+
+        outputContext.textAlign =
+            "center";
+
+        outputContext.textBaseline =
+            "middle";
+
+        outputContext.fillText(
+            box.price,
+            box.x +
+                box.width / 2,
+            box.y +
+                box.height / 2
+        );
+
+    }
+);
+
+/*
+    Download.
+*/
+
+const link =
+    document.createElement(
+        "a"
+    );
+
+link.download =
+    "cards-with-prices.png";
+
+link.href =
+    outputCanvas.toDataURL(
+        "image/png"
+    );
+
+link.click();
+
+}
+
+/* =========================================================
+WINDOW RESIZE
+========================================================= */
+
+window.addEventListener(
+"resize",
+function() {
+
+    if (image) {
+
+        fitImage();
+
+    }
+
+}
+
+);
 
 </script>
-
-</body>
+</body> 
 </html>
