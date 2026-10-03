@@ -14,7 +14,7 @@ html, body {
     margin: 0;
     width: 100%;
     height: 100%;
-    font-family: Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     overflow: hidden;
     background: #202124;
 }
@@ -36,8 +36,8 @@ button {
 }
 
 .logo {
-    font-weight: bold;
     font-size: 17px;
+    font-weight: bold;
     margin-right: 15px;
 }
 
@@ -82,7 +82,7 @@ button:hover {
 }
 
 #sidebar h3 {
-    margin: 0 0 22px;
+    margin-top: 0;
 }
 
 .control {
@@ -92,8 +92,8 @@ button:hover {
 .control-label {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
     font-size: 13px;
+    margin-bottom: 8px;
 }
 
 input[type="range"] {
@@ -112,8 +112,8 @@ input[type="range"] {
 }
 
 #workspace {
-    flex: 1;
     position: relative;
+    flex: 1;
     overflow: hidden;
 
     background-color: #d0d0d0;
@@ -150,13 +150,21 @@ input[type="range"] {
     pointer-events: none;
 }
 
+#selectionBox {
+    position: absolute;
+    border: 2px dashed #1677ff;
+    background: rgba(22,119,255,0.12);
+    pointer-events: none;
+    display: none;
+}
+
 #zoomControls {
     position: absolute;
     right: 18px;
     bottom: 18px;
     display: flex;
-    gap: 4px;
     align-items: center;
+    gap: 4px;
     background: rgba(40,40,40,.9);
     padding: 6px;
     border-radius: 8px;
@@ -185,25 +193,11 @@ input[type="range"] {
         Card Price Editor
     </div>
 
-    <button id="uploadButton">
-        Upload Image
-    </button>
-
-    <button id="undoButton">
-        Undo
-    </button>
-
-    <button id="redoButton">
-        Redo
-    </button>
-
-    <button id="deleteButton">
-        Delete
-    </button>
-
-    <button id="resetButton">
-        Reset Photo
-    </button>
+    <button id="uploadButton">Upload Image</button>
+    <button id="undoButton">Undo</button>
+    <button id="redoButton">Redo</button>
+    <button id="deleteButton">Delete</button>
+    <button id="resetButton">Reset Photo</button>
 
     <button class="download" id="downloadButton">
         Download PNG
@@ -216,6 +210,7 @@ input[type="range"] {
     >
 
 </div>
+
 
 <div id="app">
 
@@ -240,6 +235,7 @@ input[type="range"] {
 
         </div>
 
+
         <div class="control">
 
             <div class="control-label">
@@ -256,6 +252,7 @@ input[type="range"] {
             >
 
         </div>
+
 
         <div class="control">
 
@@ -274,53 +271,65 @@ input[type="range"] {
 
         </div>
 
+
         <div class="help">
 
             <strong>How to use</strong>
 
             <br><br>
 
-            Upload your card photo.
+            Click empty space to create a price box.
 
             <br><br>
 
-            Click anywhere on the photo and a
-            white <strong>100</strong> price box
-            will appear.
+            Every new box starts at
+            <strong>100</strong>.
 
             <br><br>
 
-            Drag the box to move it.
+            <strong>Type directly</strong> when a box
+            is selected to change its number.
 
             <br><br>
 
-            Drag the blue corner to resize it.
-            The number automatically becomes
-            bigger as the box gets bigger.
+            Press <strong>Enter</strong> when finished
+            typing.
 
             <br><br>
 
-            Double-click the number to change it.
+            <strong>Drag empty space</strong> around
+            several boxes to select them together.
 
             <br><br>
 
-            Select a box and press
-            <strong>Delete</strong> or
-            <strong>Backspace</strong> to remove it.
+            Drag a selected box to move all
+            selected boxes together.
 
             <br><br>
 
-            Adjust brightness, contrast and
-            saturation on the left.
+            <strong>Shift + click</strong> boxes to
+            add/remove them from the selection.
 
             <br><br>
 
-            Download the finished image when
-            you're done.
+            Drag the blue corner to resize
+            selected boxes together.
+
+            <br><br>
+
+            Press <strong>Delete</strong> or
+            <strong>Backspace</strong> to delete
+            selected boxes.
+
+            <br><br>
+
+            Double-click a box if you want to
+            select it and immediately edit its number.
 
         </div>
 
     </div>
+
 
     <div id="workspace">
 
@@ -329,6 +338,8 @@ input[type="range"] {
         </div>
 
         <canvas id="canvas"></canvas>
+
+        <div id="selectionBox"></div>
 
         <div id="zoomControls">
 
@@ -355,112 +366,231 @@ input[type="range"] {
 
 </div>
 
+
 <script>
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const workspace = document.getElementById("workspace");
-const fileInput = document.getElementById("fileInput");
-const emptyMessage = document.getElementById("emptyMessage");
+/* =========================================================
+   SETUP
+========================================================= */
+
+const canvas =
+    document.getElementById("canvas");
+
+const ctx =
+    canvas.getContext("2d");
+
+const workspace =
+    document.getElementById("workspace");
+
+const fileInput =
+    document.getElementById("fileInput");
+
+const emptyMessage =
+    document.getElementById("emptyMessage");
+
+const selectionBox =
+    document.getElementById("selectionBox");
+
 
 let image = null;
 
+
+/*
+    Every price box has:
+
+    x
+    y
+    width
+    height
+    price
+*/
+
 let boxes = [];
-let selectedBox = null;
+
+
+/*
+    Multiple boxes can now be selected.
+*/
+
+let selectedBoxes = [];
+
 
 let brightness = 100;
 let contrast = 100;
 let saturation = 100;
 
+
 let zoom = 1;
+
+
+/* Mouse states */
 
 let dragging = false;
 let resizing = false;
+let selecting = false;
 
-let dragOffsetX = 0;
-let dragOffsetY = 0;
+
+/* Group movement */
+
+let dragStartX = 0;
+let dragStartY = 0;
+
+
+/*
+    Store original positions when
+    moving multiple boxes.
+*/
+
+let dragOriginalPositions = [];
+
+
+/* Group resize */
 
 let resizeStartX = 0;
 let resizeStartY = 0;
-let resizeStartWidth = 0;
-let resizeStartHeight = 0;
+
+let resizeGroup = null;
+
+
+/* Selection rectangle */
+
+let selectionStartX = 0;
+let selectionStartY = 0;
+
+
+/* Direct typing */
+
+let editingBox = null;
+let typingValue = "";
+
+
+/* History */
 
 let history = [];
 let historyIndex = -1;
 
-/* =========================
-   UPLOAD
-========================= */
 
-document.getElementById("uploadButton").onclick = function() {
+/* =========================================================
+   UPLOAD
+========================================================= */
+
+document.getElementById("uploadButton").onclick =
+function() {
+
     fileInput.click();
+
 };
 
-fileInput.onchange = function(e) {
 
-    const file = e.target.files[0];
+fileInput.onchange =
+function(event) {
+
+    const file =
+        event.target.files[0];
 
     if (!file) return;
 
     loadImage(file);
+
 };
+
 
 function loadImage(file) {
 
-    if (!file.type.startsWith("image/")) {
+    if (
+        !file.type ||
+        !file.type.startsWith("image/")
+    ) {
         return;
     }
 
-    const reader = new FileReader();
 
-    reader.onload = function(e) {
+    const reader =
+        new FileReader();
 
-        const img = new Image();
 
-        img.onload = function() {
+    reader.onload =
+    function(event) {
+
+        const img =
+            new Image();
+
+
+        img.onload =
+        function() {
 
             image = img;
 
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
+
+            canvas.width =
+                img.naturalWidth;
+
+            canvas.height =
+                img.naturalHeight;
+
 
             boxes = [];
-            selectedBox = null;
+
+            selectedBoxes = [];
+
 
             brightness = 100;
             contrast = 100;
             saturation = 100;
 
-            document.getElementById("brightness").value = 100;
-            document.getElementById("contrast").value = 100;
-            document.getElementById("saturation").value = 100;
+
+            document.getElementById(
+                "brightness"
+            ).value = 100;
+
+            document.getElementById(
+                "contrast"
+            ).value = 100;
+
+            document.getElementById(
+                "saturation"
+            ).value = 100;
+
 
             updateLabels();
 
-            emptyMessage.style.display = "none";
+
+            emptyMessage.style.display =
+                "none";
+
 
             history = [];
             historyIndex = -1;
 
+
             saveHistory();
 
+
             fitImage();
+
             draw();
+
         };
 
-        img.src = e.target.result;
+
+        img.src =
+            event.target.result;
+
     };
+
 
     reader.readAsDataURL(file);
 }
 
-/* =========================
+
+/* =========================================================
    DRAW
-========================= */
+========================================================= */
 
 function draw() {
 
     if (!image) return;
+
 
     ctx.clearRect(
         0,
@@ -469,10 +599,16 @@ function draw() {
         canvas.height
     );
 
+
     ctx.filter =
-        "brightness(" + brightness + "%) " +
-        "contrast(" + contrast + "%) " +
-        "saturate(" + saturation + "%)";
+        "brightness(" +
+        brightness +
+        "%) contrast(" +
+        contrast +
+        "%) saturate(" +
+        saturation +
+        "%)";
+
 
     ctx.drawImage(
         image,
@@ -482,16 +618,34 @@ function draw() {
         canvas.height
     );
 
-    ctx.filter = "none";
 
-    boxes.forEach(drawBox);
+    ctx.filter =
+        "none";
+
+
+    boxes.forEach(
+        function(box) {
+
+            drawBox(box);
+
+        }
+    );
 }
+
+
+/* =========================================================
+   DRAW PRICE BOX
+========================================================= */
 
 function drawBox(box) {
 
-    /* White background */
+    /*
+        White background
+    */
 
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle =
+        "#ffffff";
+
 
     ctx.fillRect(
         box.x,
@@ -500,18 +654,28 @@ function drawBox(box) {
         box.height
     );
 
-    /* Border */
 
-    if (selectedBox === box) {
+    /*
+        Selection border
+    */
 
-        ctx.strokeStyle = "#1677ff";
+    if (
+        selectedBoxes.includes(box)
+    ) {
+
+        ctx.strokeStyle =
+            "#1677ff";
+
         ctx.lineWidth = 5;
 
     } else {
 
-        ctx.strokeStyle = "#222";
+        ctx.strokeStyle =
+            "#222";
+
         ctx.lineWidth = 2;
     }
+
 
     ctx.strokeRect(
         box.x,
@@ -520,442 +684,1537 @@ function drawBox(box) {
         box.height
     );
 
+
     /*
         FONT SIZE
 
-        This is what makes the number
-        grow when the box grows.
-
-        0.72 = 72% of box height.
-
-        Minimum = 42px.
+        Bigger box = bigger number.
     */
 
-    const fontSize = Math.max(
-        42,
-        box.height * 0.72
-    );
+    const fontSize =
+        Math.max(
+            42,
+            box.height * 0.72
+        );
 
-    ctx.fillStyle = "#111";
+
+    ctx.fillStyle =
+        "#111";
+
 
     ctx.font =
         "bold " +
         fontSize +
         "px Arial";
 
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+
+    ctx.textAlign =
+        "center";
+
+
+    ctx.textBaseline =
+        "middle";
+
+
+    /*
+        If this box is being typed into,
+        show what the user is typing.
+    */
+
+    let displayedPrice =
+        box.price;
+
+
+    if (
+        editingBox === box
+    ) {
+
+        displayedPrice =
+            typingValue;
+
+    }
+
 
     ctx.fillText(
-        box.price,
-        box.x + box.width / 2,
-        box.y + box.height / 2
+        displayedPrice,
+        box.x +
+            box.width / 2,
+        box.y +
+            box.height / 2
     );
 
-    /* Resize handle */
 
-    if (selectedBox === box) {
+    /*
+        Resize handle.
 
-        const size = 20;
+        Show on every selected box,
+        but only the bottom-right handle
+        of the overall group actually
+        controls resizing.
+    */
 
-        ctx.fillStyle = "#1677ff";
+    if (
+        selectedBoxes.includes(box)
+    ) {
+
+        const handleSize = 18;
+
+
+        ctx.fillStyle =
+            "#1677ff";
+
 
         ctx.fillRect(
-            box.x + box.width - size / 2,
-            box.y + box.height - size / 2,
-            size,
-            size
+
+            box.x +
+                box.width -
+                handleSize / 2,
+
+            box.y +
+                box.height -
+                handleSize / 2,
+
+            handleSize,
+
+            handleSize
         );
     }
 }
 
-/* =========================
-   CLICK / CREATE BOX
-========================= */
 
-canvas.addEventListener("mousedown", function(e) {
+/* =========================================================
+   MOUSE DOWN
+========================================================= */
 
-    if (!image) return;
+canvas.addEventListener(
+    "mousedown",
+    function(event) {
 
-    const p = getPosition(e);
+        if (!image) return;
 
-    /* Resize */
 
-    if (
-        selectedBox &&
-        isResizeHandle(
-            selectedBox,
-            p.x,
-            p.y
-        )
-    ) {
+        const point =
+            getPosition(event);
 
-        resizing = true;
-
-        resizeStartX = p.x;
-        resizeStartY = p.y;
-
-        resizeStartWidth =
-            selectedBox.width;
-
-        resizeStartHeight =
-            selectedBox.height;
-
-        return;
-    }
-
-    /* Existing box */
-
-    const clickedBox =
-        findBox(p.x, p.y);
-
-    if (clickedBox) {
-
-        selectedBox = clickedBox;
-
-        dragging = true;
-
-        dragOffsetX =
-            p.x - clickedBox.x;
-
-        dragOffsetY =
-            p.y - clickedBox.y;
-
-        draw();
-
-        return;
-    }
-
-    /*
-        Empty area.
-
-        CREATE DEFAULT BOX.
-
-        Default price = 100.
-    */
-
-    const newBox = {
-
-        x: p.x - 100,
-        y: p.y - 50,
-
-        width: 200,
-        height: 100,
-
-        price: "100"
-    };
-
-    keepInside(newBox);
-
-    boxes.push(newBox);
-
-    selectedBox = newBox;
-
-    saveHistory();
-
-    draw();
-});
-
-/* =========================
-   DRAG / RESIZE
-========================= */
-
-canvas.addEventListener("mousemove", function(e) {
-
-    if (!selectedBox) return;
-
-    const p = getPosition(e);
-
-    /* Resize */
-
-    if (resizing) {
-
-        let dx =
-            p.x - resizeStartX;
-
-        let dy =
-            p.y - resizeStartY;
 
         /*
-            Make the box grow based
-            primarily on mouse movement.
+            If currently editing a number,
+            finish editing first.
         */
 
-        let change =
-            Math.max(dx, dy);
+        if (editingBox) {
 
-        let newWidth =
-            resizeStartWidth + change;
+            finishEditing();
 
-        let newHeight =
-            resizeStartHeight + change * 0.5;
+        }
 
-        newWidth =
-            Math.max(70, newWidth);
 
-        newHeight =
-            Math.max(45, newHeight);
+        /*
+            SHIFT + CLICK
 
-        newWidth =
-            Math.min(
-                newWidth,
-                canvas.width - selectedBox.x
+            Add/remove individual boxes.
+        */
+
+        const clickedBox =
+            findBox(
+                point.x,
+                point.y
             );
 
-        newHeight =
-            Math.min(
-                newHeight,
-                canvas.height - selectedBox.y
+
+        if (
+            event.shiftKey &&
+            clickedBox
+        ) {
+
+            toggleBoxSelection(
+                clickedBox
             );
 
-        selectedBox.width =
-            newWidth;
+            draw();
 
-        selectedBox.height =
-            newHeight;
+            return;
+        }
 
-        draw();
 
-        return;
+        /*
+            Check group resize handle.
+        */
+
+        if (
+            selectedBoxes.length > 0 &&
+            isGroupResizeHandle(
+                point.x,
+                point.y
+            )
+        ) {
+
+            startGroupResize(
+                point.x,
+                point.y
+            );
+
+            return;
+        }
+
+
+        /*
+            Click an existing box.
+        */
+
+        if (clickedBox) {
+
+            /*
+                If clicking an unselected box,
+                select only that box.
+            */
+
+            if (
+                !selectedBoxes.includes(
+                    clickedBox
+                )
+            ) {
+
+                selectedBoxes =
+                    [clickedBox];
+
+            }
+
+
+            /*
+                Start moving all selected boxes.
+            */
+
+            dragging = true;
+
+
+            dragStartX =
+                point.x;
+
+            dragStartY =
+                point.y;
+
+
+            dragOriginalPositions =
+                selectedBoxes.map(
+                    function(box) {
+
+                        return {
+
+                            box: box,
+
+                            x: box.x,
+
+                            y: box.y
+
+                        };
+
+                    }
+                );
+
+
+            draw();
+
+            return;
+        }
+
+
+        /*
+            Clicked empty space.
+
+            Start rectangle selection.
+        */
+
+        selecting = true;
+
+
+        selectionStartX =
+            point.x;
+
+        selectionStartY =
+            point.y;
+
+
+        selectionBox.style.display =
+            "block";
+
+
+        selectionBox.style.left =
+            event.clientX -
+            workspace.getBoundingClientRect().left +
+            "px";
+
+
+        selectionBox.style.top =
+            event.clientY -
+            workspace.getBoundingClientRect().top +
+            "px";
+
+
+        selectionBox.style.width =
+            "0px";
+
+        selectionBox.style.height =
+            "0px";
+
+
+        /*
+            Temporary clear selection.
+        */
+
+        if (!event.shiftKey) {
+
+            selectedBoxes = [];
+
+            draw();
+
+        }
+
     }
+);
 
-    /* Drag */
 
-    if (dragging) {
+/* =========================================================
+   MOUSE MOVE
+========================================================= */
 
-        selectedBox.x =
-            p.x - dragOffsetX;
+canvas.addEventListener(
+    "mousemove",
+    function(event) {
 
-        selectedBox.y =
-            p.y - dragOffsetY;
+        if (!image) return;
 
-        keepInside(selectedBox);
 
-        draw();
+        const point =
+            getPosition(event);
+
+
+        /*
+            RECTANGLE SELECTION
+        */
+
+        if (selecting) {
+
+            updateSelectionRectangle(
+                event,
+                point
+            );
+
+            return;
+        }
+
+
+        /*
+            GROUP RESIZE
+        */
+
+        if (resizing) {
+
+            resizeSelectedGroup(
+                point.x,
+                point.y
+            );
+
+            return;
+        }
+
+
+        /*
+            GROUP DRAG
+        */
+
+        if (dragging) {
+
+            moveSelectedGroup(
+                point.x,
+                point.y
+            );
+
+            return;
+        }
+
     }
+);
 
-});
 
-canvas.addEventListener("mouseup", finishMouseAction);
+/* =========================================================
+   MOUSE UP
+========================================================= */
 
-canvas.addEventListener("mouseleave", finishMouseAction);
+canvas.addEventListener(
+    "mouseup",
+    function(event) {
 
-function finishMouseAction() {
+        if (selecting) {
 
-    if (dragging || resizing) {
-        saveHistory();
-    }
+            finishRectangleSelection(
+                event
+            );
 
-    dragging = false;
-    resizing = false;
-}
+            return;
+        }
 
-/* =========================
-   DOUBLE CLICK TO EDIT
-========================= */
 
-canvas.addEventListener("dblclick", function(e) {
+        if (dragging) {
 
-    if (!image) return;
-
-    const p = getPosition(e);
-
-    const box = findBox(
-        p.x,
-        p.y
-    );
-
-    if (!box) return;
-
-    const value = prompt(
-        "Enter price:",
-        box.price
-    );
-
-    if (value !== null) {
-
-        const clean =
-            value.trim();
-
-        if (clean !== "") {
-
-            box.price = clean;
+            dragging = false;
 
             saveHistory();
 
-            draw();
+            return;
         }
-    }
-});
 
-/* =========================
-   FIND BOX
-========================= */
 
-function findBox(x, y) {
+        if (resizing) {
 
-    for (
-        let i = boxes.length - 1;
-        i >= 0;
-        i--
-    ) {
+            resizing = false;
 
-        const box = boxes[i];
+            resizeGroup = null;
 
-        if (
-            x >= box.x &&
-            x <= box.x + box.width &&
-            y >= box.y &&
-            y <= box.y + box.height
-        ) {
+            saveHistory();
 
-            return box;
+            return;
         }
+
     }
+);
 
-    return null;
-}
 
-/* =========================
-   RESIZE HANDLE
-========================= */
+canvas.addEventListener(
+    "mouseleave",
+    function() {
 
-function isResizeHandle(box, x, y) {
+        /*
+            Don't cancel rectangle
+            selection accidentally.
+        */
 
-    const size = 30;
+    }
+);
 
-    const handleX =
-        box.x + box.width;
 
-    const handleY =
-        box.y + box.height;
+/* =========================================================
+   RECTANGLE SELECTION
+========================================================= */
 
-    return (
-        x >= handleX - size &&
-        x <= handleX + size &&
-        y >= handleY - size &&
-        y <= handleY + size
-    );
-}
+function updateSelectionRectangle(
+    event,
+    point
+) {
 
-/* =========================
-   POSITION
-========================= */
+    const x =
+        Math.min(
+            selectionStartX,
+            point.x
+        );
 
-function getPosition(e) {
+    const y =
+        Math.min(
+            selectionStartY,
+            point.y
+        );
+
+    const width =
+        Math.abs(
+            point.x -
+            selectionStartX
+        );
+
+    const height =
+        Math.abs(
+            point.y -
+            selectionStartY
+        );
+
 
     const rect =
         canvas.getBoundingClientRect();
 
+
+    selectionBox.style.left =
+        rect.left -
+        workspace.getBoundingClientRect().left +
+        x * zoom +
+        "px";
+
+
+    selectionBox.style.top =
+        rect.top -
+        workspace.getBoundingClientRect().top +
+        y * zoom +
+        "px";
+
+
+    selectionBox.style.width =
+        width * zoom +
+        "px";
+
+
+    selectionBox.style.height =
+        height * zoom +
+        "px";
+}
+
+
+function finishRectangleSelection(event) {
+
+    selecting = false;
+
+
+    selectionBox.style.display =
+        "none";
+
+
+    const point =
+        getPosition(event);
+
+
+    const left =
+        Math.min(
+            selectionStartX,
+            point.x
+        );
+
+    const right =
+        Math.max(
+            selectionStartX,
+            point.x
+        );
+
+    const top =
+        Math.min(
+            selectionStartY,
+            point.y
+        );
+
+    const bottom =
+        Math.max(
+            selectionStartY,
+            point.y
+        );
+
+
+    /*
+        If the drag was extremely tiny,
+        treat it as a click on empty space
+        and create a new 100 box.
+    */
+
+    if (
+        Math.abs(
+            right - left
+        ) < 8 &&
+        Math.abs(
+            bottom - top
+        ) < 8
+    ) {
+
+        const newBox = {
+
+            x:
+                point.x - 100,
+
+            y:
+                point.y - 50,
+
+            width:
+                200,
+
+            height:
+                100,
+
+            price:
+                "100"
+
+        };
+
+
+        keepInside(
+            newBox
+        );
+
+
+        boxes.push(
+            newBox
+        );
+
+
+        selectedBoxes =
+            [newBox];
+
+
+        saveHistory();
+
+        draw();
+
+        return;
+    }
+
+
+    /*
+        Select boxes that are
+        COMPLETELY inside the
+        selection rectangle.
+    */
+
+    const found =
+        boxes.filter(
+            function(box) {
+
+                return (
+
+                    box.x >= left &&
+
+                    box.y >= top &&
+
+                    box.x +
+                        box.width <= right &&
+
+                    box.y +
+                        box.height <= bottom
+
+                );
+
+            }
+        );
+
+
+    if (event.shiftKey) {
+
+        /*
+            Shift rectangle selection
+            adds to existing selection.
+        */
+
+        found.forEach(
+            function(box) {
+
+                if (
+                    !selectedBoxes.includes(
+                        box
+                    )
+                ) {
+
+                    selectedBoxes.push(
+                        box
+                    );
+
+                }
+
+            }
+        );
+
+    } else {
+
+        selectedBoxes =
+            found;
+
+    }
+
+
+    draw();
+}
+
+
+/* =========================================================
+   TOGGLE BOX SELECTION
+========================================================= */
+
+function toggleBoxSelection(box) {
+
+    const index =
+        selectedBoxes.indexOf(
+            box
+        );
+
+
+    if (index >= 0) {
+
+        selectedBoxes.splice(
+            index,
+            1
+        );
+
+    } else {
+
+        selectedBoxes.push(
+            box
+        );
+    }
+}
+
+
+/* =========================================================
+   GROUP DRAG
+========================================================= */
+
+function moveSelectedGroup(
+    x,
+    y
+) {
+
+    const dx =
+        x - dragStartX;
+
+    const dy =
+        y - dragStartY;
+
+
+    dragOriginalPositions.forEach(
+        function(item) {
+
+            item.box.x =
+                item.x + dx;
+
+            item.box.y =
+                item.y + dy;
+
+        }
+    );
+
+
+    /*
+        Keep entire group inside image.
+    */
+
+    const bounds =
+        getSelectionBounds();
+
+
+    let correctionX = 0;
+    let correctionY = 0;
+
+
+    if (bounds.left < 0) {
+
+        correctionX =
+            -bounds.left;
+
+    }
+
+
+    if (
+        bounds.right >
+        canvas.width
+    ) {
+
+        correctionX =
+            canvas.width -
+            bounds.right;
+
+    }
+
+
+    if (bounds.top < 0) {
+
+        correctionY =
+            -bounds.top;
+
+    }
+
+
+    if (
+        bounds.bottom >
+        canvas.height
+    ) {
+
+        correctionY =
+            canvas.height -
+            bounds.bottom;
+
+    }
+
+
+    if (
+        correctionX !== 0 ||
+        correctionY !== 0
+    ) {
+
+        selectedBoxes.forEach(
+            function(box) {
+
+                box.x +=
+                    correctionX;
+
+                box.y +=
+                    correctionY;
+
+            }
+        );
+
+    }
+
+
+    draw();
+}
+
+
+/* =========================================================
+   SELECTION BOUNDS
+========================================================= */
+
+function getSelectionBounds() {
+
+    if (
+        selectedBoxes.length === 0
+    ) {
+
+        return null;
+    }
+
+
+    let left =
+        Infinity;
+
+    let top =
+        Infinity;
+
+    let right =
+        -Infinity;
+
+    let bottom =
+        -Infinity;
+
+
+    selectedBoxes.forEach(
+        function(box) {
+
+            left =
+                Math.min(
+                    left,
+                    box.x
+                );
+
+            top =
+                Math.min(
+                    top,
+                    box.y
+                );
+
+            right =
+                Math.max(
+                    right,
+                    box.x +
+                    box.width
+                );
+
+            bottom =
+                Math.max(
+                    bottom,
+                    box.y +
+                    box.height
+                );
+
+        }
+    );
+
+
     return {
-
-        x:
-            (e.clientX - rect.left) /
-            zoom,
-
-        y:
-            (e.clientY - rect.top) /
-            zoom
+        left,
+        top,
+        right,
+        bottom
     };
 }
 
-/* =========================
-   KEEP BOX INSIDE IMAGE
-========================= */
 
-function keepInside(box) {
+/* =========================================================
+   GROUP RESIZE HANDLE
+========================================================= */
 
-    box.x = Math.max(
-        0,
-        Math.min(
-            canvas.width - box.width,
-            box.x
-        )
-    );
+function isGroupResizeHandle(
+    x,
+    y
+) {
 
-    box.y = Math.max(
-        0,
-        Math.min(
-            canvas.height - box.height,
-            box.y
-        )
+    const bounds =
+        getSelectionBounds();
+
+
+    if (!bounds) return false;
+
+
+    const size = 35;
+
+
+    return (
+
+        x >=
+            bounds.right -
+            size &&
+
+        x <=
+            bounds.right +
+            size &&
+
+        y >=
+            bounds.bottom -
+            size &&
+
+        y <=
+            bounds.bottom +
+            size
+
     );
 }
 
-/* =========================
-   DELETE
-========================= */
 
-function deleteSelected() {
+/* =========================================================
+   START GROUP RESIZE
+========================================================= */
 
-    if (!selectedBox) return;
+function startGroupResize(
+    x,
+    y
+) {
 
-    boxes = boxes.filter(
-        box => box !== selectedBox
+    resizing = true;
+
+
+    resizeStartX =
+        x;
+
+    resizeStartY =
+        y;
+
+
+    const bounds =
+        getSelectionBounds();
+
+
+    resizeGroup = {
+
+        left:
+            bounds.left,
+
+        top:
+            bounds.top,
+
+        right:
+            bounds.right,
+
+        bottom:
+            bounds.bottom,
+
+        width:
+            bounds.right -
+            bounds.left,
+
+        height:
+            bounds.bottom -
+            bounds.top,
+
+        boxes:
+            selectedBoxes.map(
+                function(box) {
+
+                    return {
+
+                        box: box,
+
+                        x: box.x,
+
+                        y: box.y,
+
+                        width:
+                            box.width,
+
+                        height:
+                            box.height
+
+                    };
+
+                }
+            )
+
+    };
+}
+
+
+/* =========================================================
+   RESIZE SELECTED GROUP
+========================================================= */
+
+function resizeSelectedGroup(
+    x,
+    y
+) {
+
+    if (!resizeGroup) return;
+
+
+    const startWidth =
+        resizeGroup.width;
+
+
+    const startHeight =
+        resizeGroup.height;
+
+
+    let newWidth =
+        startWidth +
+        (
+            x -
+            resizeStartX
+        );
+
+
+    let newHeight =
+        startHeight +
+        (
+            y -
+            resizeStartY
+        );
+
+
+    /*
+        Minimum group size.
+    */
+
+    newWidth =
+        Math.max(
+            50,
+            newWidth
+        );
+
+
+    newHeight =
+        Math.max(
+            30,
+            newHeight
+        );
+
+
+    /*
+        Don't allow the group
+        to become enormous.
+    */
+
+    newWidth =
+        Math.min(
+            newWidth,
+            canvas.width -
+            resizeGroup.left
+        );
+
+
+    newHeight =
+        Math.min(
+            newHeight,
+            canvas.height -
+            resizeGroup.top
+        );
+
+
+    const scaleX =
+        newWidth /
+        startWidth;
+
+
+    const scaleY =
+        newHeight /
+        startHeight;
+
+
+    resizeGroup.boxes.forEach(
+        function(item) {
+
+            const relativeX =
+                item.x -
+                resizeGroup.left;
+
+            const relativeY =
+                item.y -
+                resizeGroup.top;
+
+
+            item.box.x =
+                resizeGroup.left +
+                relativeX *
+                scaleX;
+
+
+            item.box.y =
+                resizeGroup.top +
+                relativeY *
+                scaleY;
+
+
+            item.box.width =
+                item.width *
+                scaleX;
+
+
+            item.box.height =
+                item.height *
+                scaleY;
+
+        }
     );
 
-    selectedBox = null;
+
+    draw();
+}
+
+
+/* =========================================================
+   DIRECT NUMBER EDITING
+========================================================= */
+
+/*
+    When a box is selected, simply start typing.
+
+    No popup.
+*/
+
+document.addEventListener(
+    "keydown",
+    function(event) {
+
+        /*
+            Don't intercept keyboard shortcuts
+            when typing into another HTML input.
+        */
+
+        if (
+            event.target.tagName ===
+            "INPUT"
+        ) {
+
+            return;
+        }
+
+
+        /*
+            Delete selected boxes.
+        */
+
+        if (
+            (
+                event.key ===
+                "Delete" ||
+
+                event.key ===
+                "Backspace"
+            ) &&
+            selectedBoxes.length > 0
+        ) {
+
+            event.preventDefault();
+
+            deleteSelected();
+
+            return;
+        }
+
+
+        /*
+            Escape cancels typing.
+        */
+
+        if (
+            event.key ===
+            "Escape"
+        ) {
+
+            if (editingBox) {
+
+                editingBox =
+                    null;
+
+                typingValue = "";
+
+                draw();
+
+            }
+
+            return;
+        }
+
+
+        /*
+            Enter finishes typing.
+        */
+
+        if (
+            event.key ===
+            "Enter"
+        ) {
+
+            if (editingBox) {
+
+                finishEditing();
+
+            }
+
+            return;
+        }
+
+
+        /*
+            If a number or decimal point
+            is pressed, start direct editing.
+        */
+
+        if (
+            /^[0-9.]$/.test(
+                event.key
+            )
+        ) {
+
+            if (
+                selectedBoxes.length === 1
+            ) {
+
+                const box =
+                    selectedBoxes[0];
+
+
+                if (
+                    editingBox !== box
+                ) {
+
+                    editingBox =
+                        box;
+
+                    typingValue =
+                        "";
+
+                }
+
+
+                typingValue +=
+                    event.key;
+
+
+                box.price =
+                    typingValue;
+
+
+                draw();
+
+                return;
+            }
+        }
+
+
+        /*
+            Backspace while editing.
+        */
+
+        if (
+            event.key ===
+            "Backspace" &&
+            editingBox
+        ) {
+
+            event.preventDefault();
+
+            typingValue =
+                typingValue.slice(
+                    0,
+                    -1
+                );
+
+
+            if (
+                typingValue === ""
+            ) {
+
+                typingValue =
+                    "0";
+
+            }
+
+
+            editingBox.price =
+                typingValue;
+
+
+            draw();
+
+            return;
+        }
+
+    }
+);
+
+
+/* =========================================================
+   FINISH EDITING
+========================================================= */
+
+function finishEditing() {
+
+    if (!editingBox) return;
+
+
+    if (
+        typingValue === "" ||
+        typingValue === "."
+    ) {
+
+        editingBox.price =
+            "100";
+
+    } else {
+
+        editingBox.price =
+            typingValue;
+
+    }
+
+
+    editingBox = null;
+
+    typingValue = "";
 
     saveHistory();
 
     draw();
 }
 
-document.getElementById("deleteButton").onclick =
-    deleteSelected;
 
-document.addEventListener("keydown", function(e) {
+/* =========================================================
+   DOUBLE CLICK
+========================================================= */
 
-    if (
-        selectedBox &&
-        (
-            e.key === "Delete" ||
-            e.key === "Backspace"
-        )
+canvas.addEventListener(
+    "dblclick",
+    function(event) {
+
+        if (!image) return;
+
+
+        const point =
+            getPosition(event);
+
+
+        const box =
+            findBox(
+                point.x,
+                point.y
+            );
+
+
+        if (!box) return;
+
+
+        selectedBoxes =
+            [box];
+
+
+        editingBox =
+            box;
+
+
+        typingValue =
+            box.price;
+
+
+        draw();
+
+    }
+);
+
+
+/* =========================================================
+   FIND BOX
+========================================================= */
+
+function findBox(x, y) {
+
+    /*
+        Top-most box first.
+    */
+
+    for (
+        let i =
+            boxes.length - 1;
+
+        i >= 0;
+
+        i--
     ) {
 
-        e.preventDefault();
+        const box =
+            boxes[i];
 
-        deleteSelected();
+
+        if (
+
+            x >= box.x &&
+
+            x <=
+                box.x +
+                box.width &&
+
+            y >= box.y &&
+
+            y <=
+                box.y +
+                box.height
+
+        ) {
+
+            return box;
+
+        }
     }
-});
 
-/* =========================
-   PHOTO CONTROLS
-========================= */
 
-document.getElementById("brightness").oninput =
-function(e) {
+    return null;
+}
+
+
+/* =========================================================
+   POSITION
+========================================================= */
+
+function getPosition(event) {
+
+    const rect =
+        canvas.getBoundingClientRect();
+
+
+    return {
+
+        x:
+            (
+                event.clientX -
+                rect.left
+            ) / zoom,
+
+        y:
+            (
+                event.clientY -
+                rect.top
+            ) / zoom
+
+    };
+}
+
+
+/* =========================================================
+   KEEP INSIDE
+========================================================= */
+
+function keepInside(box) {
+
+    box.x =
+        Math.max(
+            0,
+            Math.min(
+                canvas.width -
+                box.width,
+                box.x
+            )
+        );
+
+
+    box.y =
+        Math.max(
+            0,
+            Math.min(
+                canvas.height -
+                box.height,
+                box.y
+            )
+        );
+}
+
+
+/* =========================================================
+   DELETE SELECTED
+========================================================= */
+
+function deleteSelected() {
+
+    if (
+        selectedBoxes.length === 0
+    ) {
+
+        return;
+    }
+
+
+    boxes =
+        boxes.filter(
+            function(box) {
+
+                return !
+                    selectedBoxes.includes(
+                        box
+                    );
+
+            }
+        );
+
+
+    selectedBoxes = [];
+
+
+    editingBox = null;
+    typingValue = "";
+
+
+    saveHistory();
+
+    draw();
+}
+
+
+/* =========================================================
+   BRIGHTNESS / CONTRAST / SATURATION
+========================================================= */
+
+document.getElementById(
+    "brightness"
+).oninput =
+function(event) {
 
     brightness =
-        Number(e.target.value);
+        Number(
+            event.target.value
+        );
 
     updateLabels();
 
     draw();
 };
 
-document.getElementById("contrast").oninput =
-function(e) {
+
+document.getElementById(
+    "contrast"
+).oninput =
+function(event) {
 
     contrast =
-        Number(e.target.value);
+        Number(
+            event.target.value
+        );
 
     updateLabels();
 
     draw();
 };
 
-document.getElementById("saturation").oninput =
-function(e) {
+
+document.getElementById(
+    "saturation"
+).oninput =
+function(event) {
 
     saturation =
-        Number(e.target.value);
+        Number(
+            event.target.value
+        );
 
     updateLabels();
 
     draw();
 };
+
 
 function updateLabels() {
 
@@ -964,10 +2223,12 @@ function updateLabels() {
     ).textContent =
         brightness + "%";
 
+
     document.getElementById(
         "contrastValue"
     ).textContent =
         contrast + "%";
+
 
     document.getElementById(
         "saturationValue"
@@ -975,58 +2236,91 @@ function updateLabels() {
         saturation + "%";
 }
 
-/* =========================
-   RESET PHOTO
-========================= */
 
-document.getElementById("resetButton").onclick =
+/* =========================================================
+   RESET PHOTO
+========================================================= */
+
+document.getElementById(
+    "resetButton"
+).onclick =
 function() {
 
     brightness = 100;
     contrast = 100;
     saturation = 100;
 
-    document.getElementById("brightness").value = 100;
-    document.getElementById("contrast").value = 100;
-    document.getElementById("saturation").value = 100;
+
+    document.getElementById(
+        "brightness"
+    ).value = 100;
+
+
+    document.getElementById(
+        "contrast"
+    ).value = 100;
+
+
+    document.getElementById(
+        "saturation"
+    ).value = 100;
+
 
     updateLabels();
 
     draw();
 };
 
-/* =========================
-   FIT IMAGE
-========================= */
+
+/* =========================================================
+   ZOOM
+========================================================= */
 
 function fitImage() {
 
     if (!image) return;
 
+
     const padding = 50;
+
 
     const availableWidth =
         workspace.clientWidth -
         padding;
 
+
     const availableHeight =
         workspace.clientHeight -
         padding;
 
-    zoom = Math.min(
-        availableWidth / canvas.width,
-        availableHeight / canvas.height
-    );
 
-    zoom = Math.max(
-        0.05,
-        Math.min(zoom, 1)
-    );
+    zoom =
+        Math.min(
+
+            availableWidth /
+                canvas.width,
+
+            availableHeight /
+                canvas.height
+
+        );
+
+
+    zoom =
+        Math.max(
+            0.05,
+            Math.min(
+                zoom,
+                1
+            )
+        );
+
 
     applyZoom();
 
     centerCanvas();
 }
+
 
 function centerCanvas() {
 
@@ -1039,6 +2333,7 @@ function centerCanvas() {
             ) / 2
         ) + "px";
 
+
     canvas.style.top =
         Math.max(
             0,
@@ -1049,71 +2344,105 @@ function centerCanvas() {
         ) + "px";
 }
 
+
 function applyZoom() {
 
     canvas.style.transform =
-        "scale(" + zoom + ")";
+        "scale(" +
+        zoom +
+        ")";
+
 
     document.getElementById(
         "zoomLabel"
     ).textContent =
-        Math.round(zoom * 100) + "%";
+        Math.round(
+            zoom * 100
+        ) + "%";
 }
 
-document.getElementById("zoomIn").onclick =
+
+document.getElementById(
+    "zoomIn"
+).onclick =
 function() {
 
-    zoom = Math.min(
-        4,
-        zoom + 0.1
-    );
+    zoom =
+        Math.min(
+            4,
+            zoom + 0.1
+        );
 
     applyZoom();
 };
 
-document.getElementById("zoomOut").onclick =
+
+document.getElementById(
+    "zoomOut"
+).onclick =
 function() {
 
-    zoom = Math.max(
-        0.1,
-        zoom - 0.1
-    );
+    zoom =
+        Math.max(
+            0.1,
+            zoom - 0.1
+        );
 
     applyZoom();
 };
 
-document.getElementById("fitButton").onclick =
+
+document.getElementById(
+    "fitButton"
+).onclick =
 function() {
 
     fitImage();
+
 };
 
-/* =========================
-   UNDO / REDO
-========================= */
+
+/* =========================================================
+   HISTORY
+========================================================= */
 
 function getState() {
 
     return JSON.stringify({
 
-        boxes: boxes,
-        brightness: brightness,
-        contrast: contrast,
-        saturation: saturation
+        boxes:
+            boxes,
+
+        brightness:
+            brightness,
+
+        contrast:
+            contrast,
+
+        saturation:
+            saturation
 
     });
 }
 
+
 function saveHistory() {
 
-    const state = getState();
+    const state =
+        getState();
+
 
     if (
-        history.length &&
-        history[history.length - 1] === state
+        history.length > 0 &&
+
+        history[
+            history.length - 1
+        ] === state
     ) {
+
         return;
     }
+
 
     history =
         history.slice(
@@ -1121,75 +2450,123 @@ function saveHistory() {
             historyIndex + 1
         );
 
-    history.push(state);
+
+    history.push(
+        state
+    );
+
 
     historyIndex =
         history.length - 1;
 }
+
 
 function restoreState(state) {
 
     const data =
         JSON.parse(state);
 
-    boxes = data.boxes || [];
 
-    brightness = data.brightness;
-    contrast = data.contrast;
-    saturation = data.saturation;
+    boxes =
+        data.boxes || [];
 
-    selectedBox = null;
 
-    document.getElementById("brightness").value =
+    brightness =
+        data.brightness;
+
+    contrast =
+        data.contrast;
+
+    saturation =
+        data.saturation;
+
+
+    selectedBoxes = [];
+
+    editingBox = null;
+    typingValue = "";
+
+
+    document.getElementById(
+        "brightness"
+    ).value =
         brightness;
 
-    document.getElementById("contrast").value =
+
+    document.getElementById(
+        "contrast"
+    ).value =
         contrast;
 
-    document.getElementById("saturation").value =
+
+    document.getElementById(
+        "saturation"
+    ).value =
         saturation;
+
 
     updateLabels();
 
     draw();
 }
 
-function undo() {
 
-    if (historyIndex <= 0) return;
+document.getElementById(
+    "undoButton"
+).onclick =
+function() {
+
+    if (
+        historyIndex <= 0
+    ) {
+
+        return;
+    }
+
 
     historyIndex--;
 
-    restoreState(
-        history[historyIndex]
-    );
-}
 
-function redo() {
+    restoreState(
+        history[
+            historyIndex
+        ]
+    );
+};
+
+
+document.getElementById(
+    "redoButton"
+).onclick =
+function() {
 
     if (
         historyIndex >=
         history.length - 1
-    ) return;
+    ) {
+
+        return;
+    }
+
 
     historyIndex++;
 
+
     restoreState(
-        history[historyIndex]
+        history[
+            historyIndex
+        ]
     );
-}
+};
 
-document.getElementById("undoButton").onclick =
-    undo;
 
-document.getElementById("redoButton").onclick =
-    redo;
-
-/* =========================
+/* =========================================================
    DOWNLOAD
-========================= */
+========================================================= */
 
-document.getElementById("downloadButton").onclick =
+document.getElementById(
+    "downloadButton"
+).onclick =
 function() {
 
     if (!image) {
@@ -1201,24 +2578,51 @@ function() {
         return;
     }
 
+
+    /*
+        Finish typing first.
+    */
+
+    if (editingBox) {
+
+        finishEditing();
+
+    }
+
+
     const output =
-        document.createElement("canvas");
+        document.createElement(
+            "canvas"
+        );
+
 
     output.width =
         canvas.width;
 
+
     output.height =
         canvas.height;
 
-    const out =
-        output.getContext("2d");
 
-    /* Photo */
+    const out =
+        output.getContext(
+            "2d"
+        );
+
+
+    /*
+        Draw adjusted photo.
+    */
 
     out.filter =
-        "brightness(" + brightness + "%) " +
-        "contrast(" + contrast + "%) " +
-        "saturate(" + saturation + "%)";
+        "brightness(" +
+        brightness +
+        "%) contrast(" +
+        contrast +
+        "%) saturate(" +
+        saturation +
+        "%)";
+
 
     out.drawImage(
         image,
@@ -1228,113 +2632,156 @@ function() {
         output.height
     );
 
-    out.filter = "none";
 
-    /* Price boxes */
+    out.filter =
+        "none";
 
-    boxes.forEach(function(box) {
 
-        out.fillStyle = "#ffffff";
+    /*
+        Draw boxes.
+    */
 
-        out.fillRect(
-            box.x,
-            box.y,
-            box.width,
-            box.height
-        );
+    boxes.forEach(
+        function(box) {
 
-        out.strokeStyle = "#222";
+            out.fillStyle =
+                "#ffffff";
 
-        out.lineWidth = 2;
 
-        out.strokeRect(
-            box.x,
-            box.y,
-            box.width,
-            box.height
-        );
-
-        /*
-            Same dynamic font
-            as the editor.
-        */
-
-        const fontSize =
-            Math.max(
-                42,
-                box.height * 0.72
+            out.fillRect(
+                box.x,
+                box.y,
+                box.width,
+                box.height
             );
 
-        out.fillStyle = "#111";
 
-        out.font =
-            "bold " +
-            fontSize +
-            "px Arial";
+            out.strokeStyle =
+                "#222";
 
-        out.textAlign = "center";
 
-        out.textBaseline = "middle";
+            out.lineWidth =
+                2;
 
-        out.fillText(
-            box.price,
-            box.x + box.width / 2,
-            box.y + box.height / 2
-        );
 
-    });
+            out.strokeRect(
+                box.x,
+                box.y,
+                box.width,
+                box.height
+            );
 
-    /* Download */
+
+            const fontSize =
+                Math.max(
+                    42,
+                    box.height * 0.72
+                );
+
+
+            out.fillStyle =
+                "#111";
+
+
+            out.font =
+                "bold " +
+                fontSize +
+                "px Arial";
+
+
+            out.textAlign =
+                "center";
+
+
+            out.textBaseline =
+                "middle";
+
+
+            out.fillText(
+                box.price,
+                box.x +
+                    box.width / 2,
+                box.y +
+                    box.height / 2
+            );
+
+        }
+    );
+
+
+    /*
+        Download.
+    */
 
     const link =
-        document.createElement("a");
+        document.createElement(
+            "a"
+        );
+
 
     link.download =
         "cards-with-prices.png";
 
+
     link.href =
-        output.toDataURL("image/png");
+        output.toDataURL(
+            "image/png"
+        );
+
 
     link.click();
 };
 
-/* =========================
-   DRAG & DROP
-========================= */
+
+/* =========================================================
+   DRAG & DROP IMAGE
+========================================================= */
 
 workspace.addEventListener(
     "dragover",
-    function(e) {
-        e.preventDefault();
+    function(event) {
+
+        event.preventDefault();
+
     }
 );
+
 
 workspace.addEventListener(
     "drop",
-    function(e) {
+    function(event) {
 
-        e.preventDefault();
+        event.preventDefault();
+
 
         const file =
-            e.dataTransfer.files[0];
+            event.dataTransfer.files[0];
+
 
         if (file) {
+
             loadImage(file);
+
         }
+
     }
 );
 
-/* =========================
-   WINDOW RESIZE
-========================= */
+
+/* =========================================================
+   RESIZE WINDOW
+========================================================= */
 
 window.addEventListener(
     "resize",
     function() {
 
         if (image) {
+
             fitImage();
+
         }
+
     }
 );
 
